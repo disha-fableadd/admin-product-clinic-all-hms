@@ -58,6 +58,8 @@ jobs:
           local-dir: ./build_output/
           protocol: ftp
           port: 21
+          concurrency: 2        # Limits parallel uploads to prevent server drop
+          security: loose
           exclude: |
             **/.git*
             **/.env
