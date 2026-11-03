@@ -64,7 +64,14 @@
         text-align: center;
         margin-bottom: 20px;
     }
+    .account-logo1{
+        text-align: center;
 
+    }
+    .account-logo1 img{
+        max-height: 120px;
+        width: auto;
+    }
     .btn-primary {
         background-color: rgb(159 217 193);
         border-color: rgb(159 217 193);
@@ -111,8 +118,8 @@
         <div class="login-form">
             <form action="" method="POST" id="login-form">
                 @csrf
-                <div class="account-logo">
-                    <img src="{{ asset((env('IMAGE_PATH') ?: '') . 'admin/assets/img/logo/Fablead_HMS_4K.png') }}" class="regular-logo" alt="Fablead HMS" style="height:auto !important;width:200px;">
+                <div class="account-logo1">
+                    <img src="{{ asset((env('IMAGE_PATH') ?: '') . 'admin/assets/img/logo/Fablead_HMS_4K.png') }}" class="regular-logo" alt="Fablead HMS">
                 </div>
                 <div class="form-group">
                     <label>Username</label>
@@ -171,13 +178,13 @@
             border-color: #e63c3c;
         }
 
-        @media (max-width: 767px) {
+        /* @media (max-width: 767px) {
             .regular-logo {
                 max-width: 110px !important;
                 max-height: 40px !important;
                 width: auto !important;
             }
-        }
+        } */
     </style>
 </body>
 
