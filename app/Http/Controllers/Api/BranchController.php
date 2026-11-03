@@ -51,24 +51,25 @@ class BranchController extends Controller
         ]);
 
         $user = \Illuminate\Support\Facades\Auth::user();
-        if ($user) {
-            $planId = $user->plan_id;
-            if (!$planId && $user->created_by) {
-                $creator = \App\Models\User::find($user->created_by);
-                $planId = $creator ? $creator->plan_id : null;
-            }
+        $plan = null;
+        if ($user && $user->plan_id) {
+            $plan = \App\Models\Plan::find($user->plan_id);
+        }
+        if (!$plan && $user && $user->created_by) {
+            $creator = \App\Models\User::find($user->created_by);
+            $plan = $creator && $creator->plan_id ? \App\Models\Plan::find($creator->plan_id) : null;
+        }
+        if (!$plan) {
+            $plan = \App\Models\Plan::where('is_active', 1)->first() ?: \App\Models\Plan::first();
+        }
 
-            if ($planId) {
-                $plan = \App\Models\Plan::find($planId);
-                if ($plan && isset($plan->branch_limit)) {
-                    $currentBranchCount = \App\Models\Branch::count();
-                    if ($currentBranchCount >= $plan->branch_limit) {
-                        return response()->json([
-                            'status'  => false,
-                            'message' => 'Branch limit reached for your plan. Please upgrade your plan to add more branches.',
-                        ], 403);
-                    }
-                }
+        if ($plan && $plan->branch_limit !== null && (int) $plan->branch_limit > 0) {
+            $currentBranchCount = \App\Models\Branch::count();
+            if ($currentBranchCount >= (int) $plan->branch_limit) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => "Maximum branch limit of {$plan->branch_limit} reached for your plan. Please upgrade your plan to add more branches.",
+                ], 422);
             }
         }
 

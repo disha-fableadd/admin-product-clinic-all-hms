@@ -1,4 +1,4 @@
-﻿@extends('layout.app')
+@extends('layout.app')
 
 
 
@@ -385,10 +385,11 @@ table.dataTable {
                                 data: 'fullname',
                                 render: function (data, type, row) {
                                     const name = data ? ucfirst(data) : 'N/A';
+                                    const usernameBadge = row.username ? `<span class="d-block text-muted" style="font-size:12px;"><i class="fa fa-user-circle"></i> @${row.username}</span>` : '';
                                     const profile = row.profile || '';
                                     return `
                                         <img src="${profile}" class="rounded-circle" width="50" height="50">
-                                        <span><h2>${name}</h2></span>
+                                        <span><h2>${name}</h2>${usernameBadge}</span>
                                     `;
                                 },
                                 className: "view-user",
@@ -491,6 +492,7 @@ table.dataTable {
                     <tr class="details-row">
                         <td colspan="8">
                             <div class="details-content">
+                                <div><strong>Username:</strong> ${rowData?.username || 'N/A'}</div>
                                 <div><strong>Email:</strong> ${email}</div>
                                 <div><strong>Mobile:</strong> ${phone}</div>
                                 <div><strong>Join Date:</strong> ${joinDate}</div>
