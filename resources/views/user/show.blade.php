@@ -1,4 +1,4 @@
-﻿@extends('layout.app')
+@extends('layout.app')
 <style>
     .container {
         width: 60%;
@@ -253,6 +253,12 @@
                                             <hr class="margin-text">
 
                                             <p class="text-dark margin-text">
+                                                <strong><i class="fa fa-user-circle icon-style1"></i> Username: </strong>
+                                                <span id="userUsername"></span>
+                                            </p>
+                                            <hr class="margin-text">
+
+                                            <p class="text-dark margin-text">
                                                 <strong><i class="fa fa-phone icon-style1"></i> Phone: </strong>
                                                 <span id="userPhone"></span>
                                             </p>
@@ -426,6 +432,7 @@
                     // $('#userSalary').text(data.salary ?? 'N/A');
 
                     $('.userFullName').text(data.fullname ? data.fullname.charAt(0).toUpperCase() + data.fullname.slice(1) : 'N/A');
+                    $('#userUsername').text(data.username || 'N/A');
                     $('#userRole').text(data.roleName ? data.roleName.charAt(0).toUpperCase() + data.roleName.slice(1) : 'N/A');
                     $('#userEmail').text(data.email || 'N/A');
                     $('#userPhone').text(data.phone || 'N/A');

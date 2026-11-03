@@ -1,4 +1,4 @@
-﻿@extends('layout.app')
+@extends('layout.app')
 <style>
     .container {
         width: 60%;
@@ -153,13 +153,20 @@
 
                                 <div class="col-12">
                                     <div class="row">
-                                       
-                                        <div class="col-12">
+                                        <div class="col-12 col-md-6 col-lg-6">
                                             <div class="form-group">
                                                 <label><i class="fas fa-user icon-style"></i> Full Name <span
                                                         class="text-danger">*</span></label>
                                                 <input class="form-control" type="text" name="fullname"
                                                     placeholder="Enter Full Name" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6 col-lg-6">
+                                            <div class="form-group">
+                                                <label><i class="fas fa-user-circle icon-style"></i> Username <span
+                                                        class="text-danger">*</span></label>
+                                                <input class="form-control" type="text" name="username"
+                                                    placeholder="Enter Username" required>
                                             </div>
                                         </div>
                                     </div>
@@ -444,6 +451,7 @@
                 const fieldMessages = {
                     role_id: "Role is required.",
                     fullname: "Fullname is required.",
+                    username: "Username is required.",
                     email: "Email is required.",
 
                 };
@@ -667,7 +675,7 @@
                     headers: { "Authorization": "Bearer " + token },
                     success: function (data) {
 
-                        // $('input[name="username"]').val(data.username);
+                        $('input[name="username"]').val(data.username || '');
                         $('input[name="fullname"]').val(data.fullname);
                         $('input[name="email"]').val(data.email);
                         $('input[name="phone"]').val(data.phone);

@@ -354,6 +354,7 @@ class UserController extends Controller
             if ($searchValue) {
                 $filteredQuery->where(function ($q) use ($searchValue) {
                     $q->where('fullname', 'like', "%{$searchValue}%")
+                        ->orWhere('username', 'like', "%{$searchValue}%")
                         ->orWhere('email', 'like', "%{$searchValue}%")
                         ->orWhere('phone', 'like', "%{$searchValue}%");
                 });
@@ -403,6 +404,7 @@ class UserController extends Controller
         if ($searchValue) {
             $query->where(function ($q) use ($searchValue) {
                 $q->where('fullname', 'like', "%{$searchValue}%")
+                    ->orWhere('username', 'like', "%{$searchValue}%")
                     ->orWhere('email', 'like', "%{$searchValue}%")
                     ->orWhere('phone', 'like', "%{$searchValue}%");
             });
@@ -831,13 +833,42 @@ class UserController extends Controller
         $loggedInUserId = auth()->id();
 
         try {
+            // Check plan limit for staff (user_limit)
+            $authUser = auth()->user();
+            $plan = null;
+            if ($authUser && $authUser->plan_id) {
+                $plan = \App\Models\Plan::find($authUser->plan_id);
+            }
+            if (!$plan) {
+                $plan = \App\Models\Plan::where('is_active', 1)->first() ?: \App\Models\Plan::first();
+            }
+
+            if ($plan && $plan->user_limit !== null && (int) $plan->user_limit > 0) {
+                $existingStaffCount = User::where(function ($q) {
+                        $q->where('is_deleted', 0)->orWhereNull('is_deleted');
+                    })
+                    ->where(function ($q) {
+                        $q->where('role_id', '!=', 2)->orWhereNull('role_id');
+                    })
+                    ->count();
+
+                if ($existingStaffCount >= (int) $plan->user_limit) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => "Maximum staff limit of {$plan->user_limit} reached for your plan. Please upgrade your plan to add more staff.",
+                        'error' => "Maximum staff limit of {$plan->user_limit} reached for your plan."
+                    ], 422);
+                }
+            }
+
             $currentProjectTypeId = (int) \App\Models\Setting::getValue('project_type_id', 1);
             $roleValidation = $currentProjectTypeId === 3 ? 'nullable|int|max:255' : 'required|int|max:255';
 
-            // Validate main user data including branch_id
+            // Validate main user data including branch_id and username
             $userValidator = Validator::make($request->all(), [
                 'role_id' => $roleValidation,
                 'fullname' => 'required|string|max:255',
+                'username' => 'nullable|string|max:100|unique:user,username',
                 'email' => 'required|email|unique:user,email',
                 'phone' => 'nullable|string|max:15',
                 'password' => 'required|string',
@@ -871,10 +902,15 @@ class UserController extends Controller
                 $imagePath = 'uploads/users/' . $filename;
             }
 
+            $username = $request->filled('username')
+                ? strtolower(trim($request->username))
+                : strtolower(trim(explode('@', $request->email)[0]));
+
             // Create the user
             $user = User::create([
                 'role_id' => (int) $request->role_id,
                 'fullname' => $request->fullname,
+                'username' => $username,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'branch_id' => $request->branch_id, // Store branch_id
@@ -1155,7 +1191,7 @@ class UserController extends Controller
         // Validate User Input
         $userValidator = Validator::make($request->all(), [
             'role_id' => $roleValidation,
-            // 'username' => "required|string|max:255|unique:user,username," . $id,
+            'username' => 'nullable|string|max:100|unique:user,username,' . $id,
             'fullname' => 'required|string|max:255',
             'email' => "required|email|unique:user,email," . $id,
             'phone' => 'nullable|string|max:15',
@@ -1198,7 +1234,9 @@ class UserController extends Controller
 
         // Update or Create User
         $user->role_id = $request->role_id;
-        // $user->username = $request->username;
+        if ($request->filled('username')) {
+            $user->username = strtolower(trim($request->username));
+        }
         $user->fullname = $request->fullname;
         $user->email = $request->email;
         $user->phone = $request->phone;

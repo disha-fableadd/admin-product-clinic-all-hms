@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Concerns\EncryptsModelData;
-
 
 class User extends Authenticatable
 {
@@ -21,16 +19,20 @@ class User extends Authenticatable
         'id',
         'role_id',
         'fullname',
+        'username',
         'email',
         'phone',
         'profile',
         'password',
         'branch_id',
         'plan_id',
+        'clinic_name',
+        'clinic_logo',
+        'status',
+        'is_deleted',
         'created_by'
     ];
     protected $hidden = ['password', 'remember_token'];
-
 
     public function creator()
     {

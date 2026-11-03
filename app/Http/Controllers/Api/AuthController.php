@@ -39,27 +39,19 @@ class AuthController extends Controller
 
     protected function findUserByLoginEmail(string $email): ?User
     {
-        $normalizedEmail = mb_strtolower(trim($email));
+        $normalized = mb_strtolower(trim($email));
 
-        if (DB::getSchemaBuilder()->hasColumn('user', 'email_search')) {
-            $userId = DB::table('user')
-                ->where('email_search', $normalizedEmail)
-                ->value('id');
-
-            if ($userId) {
-                return User::find($userId);
+        // Strictly search by username (not email)
+        if (DB::getSchemaBuilder()->hasColumn('user', 'username')) {
+            $userByUsername = User::whereRaw('LOWER(TRIM(username)) = ?', [$normalized])->first();
+            if ($userByUsername) {
+                return $userByUsername;
             }
         }
 
-        $user = User::where('email', $normalizedEmail)->first();
-
-        if ($user) {
-            return $user;
-        }
-
-        // Fallback for older rows where email may be encrypted without a search column.
-        return User::all()->first(function (User $candidate) use ($normalizedEmail) {
-            return mb_strtolower((string) $candidate->email) === $normalizedEmail;
+        // Fallback matching username only
+        return User::all()->first(function (User $candidate) use ($normalized) {
+            return !empty($candidate->username) && mb_strtolower(trim((string) $candidate->username)) === $normalized;
         });
     }
 
@@ -247,17 +239,25 @@ class AuthController extends Controller
     public function login(Request $request)
 {
     $request->validate([
-        'email' => 'required|email',
+        'username' => 'nullable|string',
+        'email' => 'nullable|string',
         'password' => 'required',
     ]);
 
-    $email = trim($request->email);
+    $username = trim((string) ($request->username ?? $request->email ?? ''));
+
+    if (empty($username)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Username is required.',
+        ], 422);
+    }
 
     $maxAttempts = 5;
     $lockMinutes = 5;
 
-    $attemptKey = 'login_attempts_' . $email;
-    $lockKey = 'login_lock_' . $email;
+    $attemptKey = 'login_attempts_' . $username;
+    $lockKey = 'login_lock_' . $username;
 
     // Check if user is locked
     if (Cache::has($lockKey)) {
@@ -271,7 +271,7 @@ class AuthController extends Controller
         ], 429);
     }
 
-    $user = $this->findUserByLoginEmail($email);
+    $user = $this->findUserByLoginEmail($username);
 
     if (!$user || !Hash::check($request->password, $user->password)) {
 
@@ -319,8 +319,10 @@ class AuthController extends Controller
 
     $permissionsFormatted = [];
     $modules = Modules::all();
+    $userPermissions = UserPermission::where('user_id', $user->id)->get()->keyBy('module_id');
+    $hasCustomPermissions = $userPermissions->isNotEmpty();
 
-    if (strtolower($user->role->name ?? '') === 'admin') {
+    if (strtolower($user->role->name ?? '') === 'admin' && !$hasCustomPermissions) {
 
         foreach ($modules as $module) {
             $permissionsFormatted[$module->name] = [
@@ -339,8 +341,6 @@ class AuthController extends Controller
 
     } else {
 
-        $userPermissions = UserPermission::where('user_id', $user->id)->get()->keyBy('module_id');
-
         foreach ($modules as $module) {
 
             $perm = $userPermissions->get($module->id);
@@ -353,11 +353,11 @@ class AuthController extends Controller
                 'create' => $perm ? (string) $perm->create : "0",
                 'update' => $perm ? (string) $perm->update : "0",
                 'delete' => $perm ? (string) $perm->delete : "0",
-                'created_at' => $perm ? $perm->created_at->toDateTimeString() : now()->toDateTimeString(),
+                'created_at' => ($perm && $perm->created_at) ? (is_string($perm->created_at) ? $perm->created_at : $perm->created_at->toDateTimeString()) : now()->toDateTimeString(),
             ];
         }
 
-        $branch = Branch::find($user->branch_id);
+        $branch = Branch::find($user->branch_id) ?: Branch::first();
     }
 
     session([
@@ -403,16 +403,26 @@ class AuthController extends Controller
     public function loginAPIs(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'username' => 'nullable|string',
+            'email' => 'nullable|string',
             'password' => 'required',
         ]);
 
-        $user = $this->findUserByLoginEmail($request->email);
+        $username = trim((string) ($request->username ?? $request->email ?? ''));
+
+        if (empty($username)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Username is required.',
+            ], 422);
+        }
+
+        $user = $this->findUserByLoginEmail($username);
 
         if (!$user) {
             return response()->json([
                 'status' => false,
-                'message' => 'Email does not exist.',
+                'message' => 'Username does not exist.',
             ], 401);
         }
 
@@ -447,8 +457,10 @@ class AuthController extends Controller
 
         $permissionsFormatted = [];
         $modules = Modules::all(); // Get all modules
+        $userPermissions = UserPermission::where('user_id', $user->id)->get()->keyBy('module_id');
+        $hasCustomPermissions = $userPermissions->isNotEmpty();
 
-        if (strtolower($user->role->name ?? '') === 'admin') {
+        if (strtolower($user->role->name ?? '') === 'admin' && !$hasCustomPermissions) {
             // Admin: give full permissions for all modules
             foreach ($modules as $module) {
                 $permissionsFormatted[$module->name] = [
@@ -463,9 +475,7 @@ class AuthController extends Controller
                 ];
             }
         } else {
-            // Non-admin: fetch user permissions from DB
-            $userPermissions = UserPermission::where('user_id', $user->id)->get()->keyBy('module_id');
-
+            // Non-admin or admin with custom permissions: fetch user permissions from DB
             foreach ($modules as $module) {
                 $perm = $userPermissions->get($module->id);
                 $permissionsFormatted[$module->name] = [
@@ -476,7 +486,7 @@ class AuthController extends Controller
                     'create' => $perm ? (string) $perm->create : "0",
                     'update' => $perm ? (string) $perm->update : "0",
                     'delete' => $perm ? (string) $perm->delete : "0",
-                    'created_at' => $perm ? $perm->created_at->toDateTimeString() : now()->toDateTimeString(),
+                    'created_at' => ($perm && $perm->created_at) ? (is_string($perm->created_at) ? $perm->created_at : $perm->created_at->toDateTimeString()) : now()->toDateTimeString(),
                 ];
             }
         }

@@ -132,9 +132,9 @@
 
                 </div>
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" id="email" >
-                    @error('email')
+                    <label>Username</label>
+                    <input type="text" name="username" class="form-control" id="username" placeholder="Enter Username" autocomplete="username">
+                    @error('username')
                     <div class="text-danger">{{ $message }}</div>
                     @enderror
                 </div>
@@ -203,18 +203,16 @@ $(document).ready(function() {
 
     $('#login-form').validate({
         rules: {
-            email: {
-                required: true,
-                email: true
+            username: {
+                required: true
             },
             password: {
                 required: true
             }
         },
         messages: {
-            email: {
-                required: "Please enter your email address.",
-                email: "Please enter a valid email address."
+            username: {
+                required: "Please enter your username."
             },
             password: {
                 required: "Please enter your password."
@@ -224,7 +222,7 @@ $(document).ready(function() {
             $('#loginButton').attr('disabled', true);
             $('#loginLoader').removeClass('d-none');
 
-            var email = $('#email').val().trim();
+            var username = $('#username').val().trim();
             var password = $('#password').val().trim();
 
             $.ajax({
@@ -232,7 +230,8 @@ $(document).ready(function() {
                 method: "POST",
                 contentType: "application/json",
                 data: JSON.stringify({
-                    email: email,
+                    username: username,
+                    email: username,
                     password: password
                 }),
                 success: function(response) {
