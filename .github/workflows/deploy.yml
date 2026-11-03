@@ -29,15 +29,14 @@ jobs:
       - name: Clean unwanted folders from build_output
         run: |
           rm -rf ./build_output/vendor
+          rm -rf ./build_output/vendor_old
           rm -rf ./build_output/node_modules
           rm -rf ./build_output/storage
           rm -rf ./build_output/public/uploads
           rm -rf ./build_output/public/storage
           rm -rf ./build_output/.git
-         
           rm -f ./build_output/.gitignore
           rm -f ./build_output/.gitattributes
-
 
       - name: Debug secrets
         run: |
@@ -46,21 +45,24 @@ jobs:
           echo "Password is set: ${{ secrets.FTP_PASSWORD != '' }}"
 
       - name: Deploy to cPanel via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: '72.60.216.54'
-          username: 'u573967329.hmsftpusr'
-          password: '6MXw3l9Y1P?a'
-          server-dir: ./
+          server: ${{ secrets.FTP_HOST || '72.60.216.54' }}
+          username: ${{ secrets.FTP_USERNAME || 'u573967329.hmsftpusr' }}
+          password: ${{ secrets.FTP_PASSWORD || '6MXw3l9Y1P?a' }}
+          server-dir: /
           local-dir: ./build_output/
           protocol: ftp
           port: 21
+          timeout: 600000
+          security: loose
+          log-level: verbose
           exclude: |
             **/.git*
             **/.env
             **/vendor/**
+            **/vendor_old/**
             **/node_modules/**
             **/storage/**
             **/public/uploads/**
             **/public/storage/**
-           
