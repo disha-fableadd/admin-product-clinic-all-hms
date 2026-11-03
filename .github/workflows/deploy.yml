@@ -52,7 +52,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD || '6MXw3l9Y1P?a' }}
           server-dir: /
           local-dir: ./build_output/
-          protocol: ftp
+          protocol: ftps
           port: 21
           timeout: 600000
           security: loose
