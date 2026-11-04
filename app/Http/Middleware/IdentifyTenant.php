@@ -21,10 +21,36 @@ class IdentifyTenant
             return $next($request);
         }
 
+        // 0. Primary resolution: resolve and activate tenant by incoming request Host (e.g. hms.fableadtech.com)
+        $host = $request->getHost();
+        $isCentral = static::isCentralHost($host);
+
+        if (! $isCentral) {
+            try {
+                $forceFresh = $request->has('refresh_tenant') || $request->has('refresh_permissions');
+                $tenant = $this->tenancy->resolveByHost($host, $forceFresh);
+                if ($tenant) {
+                    if ($request->hasSession()) {
+                        $request->session()->put('tenant_id', $tenant['id']);
+                        $request->session()->put('tenant', $tenant);
+                    }
+                    return $next($request);
+                }
+            } catch (TenantResolutionException $e) {
+                if ($e->reason === 'SUSPENDED' || $e->reason === 'EXPIRED') {
+                    return $this->deny($request, $e);
+                }
+            } catch (\Throwable) {}
+        }
+
         // 1. Resolve tenant via Bearer token (Sanctum) if present
         if ($bearerToken = $request->bearerToken()) {
             try {
-                $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($bearerToken);
+                $tokenModel = null;
+                try {
+                    $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($bearerToken);
+                } catch (\Throwable) {}
+
                 if ($tokenModel && $tokenModel->tokenable) {
                     $user = $tokenModel->tokenable;
                     \Illuminate\Support\Facades\Auth::setUser($user);
@@ -78,13 +104,16 @@ class IdentifyTenant
 
         // 3. If user is authenticated via session cookie or access_token in session
         if ($request->hasSession()) {
-            $user = \Illuminate\Support\Facades\Auth::user();
-            if (!$user && $request->session()->has('user_id')) {
-                $user = \App\Models\User::find($request->session()->get('user_id'));
-                if ($user) {
-                    \Illuminate\Support\Facades\Auth::setUser($user);
+            $user = null;
+            try {
+                $user = \Illuminate\Support\Facades\Auth::user();
+                if (!$user && $request->session()->has('user_id')) {
+                    $user = \App\Models\User::find($request->session()->get('user_id'));
+                    if ($user) {
+                        \Illuminate\Support\Facades\Auth::setUser($user);
+                    }
                 }
-            }
+            } catch (\Throwable) {}
 
             if ($user && !empty($user->email)) {
                 try {
@@ -199,16 +228,13 @@ class IdentifyTenant
         $host = preg_replace('#:\d+$#', '', $host);
 
         $appHost = parse_url(config('app.url'), PHP_URL_HOST);
-        if ($appHost && strtolower($appHost) === $host) {
+        if ($appHost && strtolower($appHost) === $host && in_array($host, ['localhost', '127.0.0.1'], true)) {
             return true;
         }
 
         return in_array($host, [
             'localhost',
             '127.0.0.1',
-            'hms-demo.fableadtech.com',
-            'devhms.fableadtech.com',
-            'hms.fableadtech.com',
         ], true);
     }
 }
