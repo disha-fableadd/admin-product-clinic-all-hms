@@ -195,7 +195,7 @@ if (! function_exists('tenant_image_url')) {
     {
         $relativePath = ltrim(trim((string) $relativePath), '/');
         if ($relativePath === '') {
-            return asset('admin/assets/img/cliniclogo.png');
+            return hms_default_logo();
         }
 
         if (str_starts_with($relativePath, 'http://') || str_starts_with($relativePath, 'https://')) {
@@ -208,7 +208,83 @@ if (! function_exists('tenant_image_url')) {
             return url('storage/tenants/' . tenant('id') . '/app/public/' . $relativePath);
         }
 
-        return url('storage/' . $relativePath);
+        return url('public/storage/' . $relativePath);
     }
 }
+
+if (! function_exists('hms_default_logo')) {
+    /**
+     * Default application/clinic logo URL on live server and local.
+     */
+    function hms_default_logo(): string
+    {
+        return url('public/admin/assets/img/Fablead_HMS_4K.png');
+    }
+}
+
+if (! function_exists('hms_default_profile')) {
+    /**
+     * Default user avatar image URL on live server and local.
+     */
+    function hms_default_profile(): string
+    {
+        return url('public/admin/assets/img/images.png');
+    }
+}
+
+if (! function_exists('hms_clinic_logo')) {
+    /**
+     * Active clinic logo: returns custom uploaded logo if present, else default Fablead logo.
+     */
+    function hms_clinic_logo(): string
+    {
+        try {
+            $custom = \App\Models\Setting::where('key', 'clinic_logo')->value('value');
+            if (!empty($custom) && !in_array($custom, ['default-logo.png', 'admin/assets/img/cliniclogo.png', 'admin/assets/img/Fablead_HMS_4K.png'], true)) {
+                if (str_starts_with($custom, 'http://') || str_starts_with($custom, 'https://')) {
+                    return $custom;
+                }
+                $clean = ltrim($custom, '/');
+                if (str_starts_with($clean, 'public/')) {
+                    return url($clean);
+                }
+                return url('public/' . $clean);
+            }
+        } catch (\Throwable $e) {}
+
+        return hms_default_logo();
+    }
+}
+
+if (! function_exists('hms_user_profile')) {
+    /**
+     * User profile avatar URL: returns custom uploaded avatar if present, else default images.png.
+     */
+    function hms_user_profile($user = null): string
+    {
+        try {
+            $u = $user ?: auth()->user();
+            if ($u) {
+                // If model has getProfileAttribute, raw value or accessor
+                $raw = $u->getRawOriginal('profile') ?? ($u->profile ?? null);
+                if (!empty($raw) && !in_array($raw, ['default.png', 'default.webp', 'img1.png', 'images.png', 'admin/assets/img/images.png', 'admin/assets/img/img1.png'], true)) {
+                    if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://')) {
+                        return $raw;
+                    }
+                    $clean = ltrim($raw, '/');
+                    if (str_starts_with($clean, 'public/')) {
+                        return url($clean);
+                    }
+                    if (!str_starts_with($clean, 'profile/') && !str_starts_with($clean, 'uploads/')) {
+                        $clean = 'profile/' . $clean;
+                    }
+                    return url('public/' . $clean);
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        return hms_default_profile();
+    }
+}
+
 

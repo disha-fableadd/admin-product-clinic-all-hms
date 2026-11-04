@@ -284,6 +284,7 @@ class PlanController extends Controller
         $payload = [
             'amount' => (float) $validated['amount'],
             'client_id' => $clientId,
+            'domain' => $tenant['domain'] ?? $request->getHost(),
             'payment_type' => $validated['payment_type'],
             'name' => $tenant['client_name'] ?? ($user->fullname ?? 'HMS Client'),
             'email' => $user->email ?? ($tenant['email'] ?? ''),
@@ -358,6 +359,7 @@ class PlanController extends Controller
                 'razorpay_payment_id' => $validated['razorpay_payment_id'],
                 'razorpay_signature' => $validated['razorpay_signature'],
                 'client_id' => $clientId,
+                'domain' => $tenant['domain'] ?? $request->getHost(),
                 'email' => $tenant['email'] ?? ($user->email ?? null),
                 'payment_type' => $validated['payment_type'],
                 'amount' => $validated['amount'],
@@ -402,29 +404,31 @@ class PlanController extends Controller
                     : $baseDate->copy()->addYear()->toDateString();
 
                 if ($currentPlan) {
-                    $durationVal = str_contains($cycle, 'month') ? 'month' : 'year';
+                    $isMonth = str_contains($cycle, 'month');
+                    $durationInt = $isMonth ? 1 : 12;
+                    $durationStr = $isMonth ? 'month' : 'year';
+
+                    // Default to integer duration which is universally compatible with both INT and VARCHAR columns
                     $planUpdatePayload = [
                         'is_active' => 1,
-                        'duration' => $durationVal,
+                        'duration' => $durationInt,
                         'start_date' => $renewalStartDate,
                         'end_date' => $newEndDate,
                         'total_amount' => $validated['amount'],
                     ];
 
                     try {
-                        DB::statement("ALTER TABLE `plans` MODIFY COLUMN `duration` VARCHAR(255) NULL");
                         $currentPlan->update($planUpdatePayload);
-                    } catch (\Illuminate\Database\QueryException $qe) {
-                        if (str_contains($qe->getMessage(), 'duration')) {
-                            try {
-                                DB::statement("ALTER TABLE `plans` MODIFY COLUMN `duration` VARCHAR(255) NULL");
-                                $currentPlan->update($planUpdatePayload);
-                            } catch (\Throwable $e2) {
-                                $planUpdatePayload['duration'] = str_contains($cycle, 'month') ? 1 : 12;
-                                $currentPlan->update($planUpdatePayload);
-                            }
-                        } else {
-                            throw $qe;
+                    } catch (\Throwable $e) {
+                        // Fallback: try string duration if table strictly expects string
+                        try {
+                            $planUpdatePayload['duration'] = $durationStr;
+                            $currentPlan->update($planUpdatePayload);
+                        } catch (\Throwable $e2) {
+                            Log::error('Failed to update plan duration: ' . $e2->getMessage());
+                            // Update without duration if duration column has strict constraint
+                            unset($planUpdatePayload['duration']);
+                            $currentPlan->update($planUpdatePayload);
                         }
                     }
 

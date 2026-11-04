@@ -1114,21 +1114,19 @@
         <a href="{{ route('dashboard') }}" class="logo">
             @php
                 $hdrTenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
-                $customLogo = Setting::where('key', 'clinic_logo')->value('value');
-                $clinicLogo = ($customLogo && file_exists(public_path($customLogo)))
-                    ? asset($customLogo)
-                    : asset('admin/assets/img/Fablead_HMS_4K.png');
+                $clinicLogo = function_exists('hms_clinic_logo') ? hms_clinic_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png');
+                $defaultLogo = function_exists('hms_default_logo') ? hms_default_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png');
                 $clinicName = !empty($hdrTenant['brand_name']) ? $hdrTenant['brand_name'] :
                     (!empty($hdrTenant['client_name']) ? $hdrTenant['client_name'] :
                     (Setting::where('key', 'clinic_name')->value('value') ?: 'Fablead HMS'));
             @endphp
             <img src="{{ $clinicLogo }}" class="regular-logo" alt="{{ $clinicName }}"
-                onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
+                onerror="this.onerror=null;this.src='{{ $defaultLogo }}';"
                 style="height:auto;width:100%">
         </a>
         <a href="{{ route('dashboard') }}" class="logo1">
             <img src="{{ $clinicLogo }}" alt="Mini Logo" class="mini-logo"
-                onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
+                onerror="this.onerror=null;this.src='{{ $defaultLogo }}';"
                 style="height:auto;width:70%;">
         </a>
 
@@ -1333,7 +1331,8 @@
 
                 <span class="user-img">
                     <img class="rounded-circle mr-1 user-image"
-                        src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
+                        src="{{ function_exists('hms_user_profile') ? hms_user_profile() : url('public/admin/assets/img/images.png') }}"
+                        onerror="this.onerror=null;this.src='{{ function_exists('hms_default_profile') ? hms_default_profile() : url('public/admin/assets/img/images.png') }}';"
                         width="30" alt="Profile Image">
 
                     <span class="status online"></span>
@@ -1350,7 +1349,8 @@
                 <a class="dropdown-item py-2 d-flex align-items-center" href="{{ route('profile') }}"
                     style="font-size: 16px;">
                     <img class="rounded-circle mr-2 user-image"
-                        src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
+                        src="{{ function_exists('hms_user_profile') ? hms_user_profile() : url('public/admin/assets/img/images.png') }}"
+                        onerror="this.onerror=null;this.src='{{ function_exists('hms_default_profile') ? hms_default_profile() : url('public/admin/assets/img/images.png') }}';"
                         width="30" alt="Profile Image">
                     <span class="user-name">{{ Auth::user()->name }}</span>
                 </a>
@@ -1929,8 +1929,8 @@
 
                 if (response.user) {
 
-                    var defaultProfile = '{{ asset("admin/assets/img/images.png") }}';
-                    var userImg = (response.user.profile && !response.user.profile.includes('default.png')) ? response.user.profile : defaultProfile;
+                    var defaultProfile = '{{ function_exists("hms_default_profile") ? hms_default_profile() : url("public/admin/assets/img/images.png") }}';
+                    var userImg = (response.user.profile && !response.user.profile.includes('default.png') && !response.user.profile.includes('img1.png')) ? response.user.profile : defaultProfile;
                     $('.user-image').attr('src', userImg);
 
 

@@ -31,10 +31,8 @@
                 
                 $tenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
 
-                $customClinicLogo = \App\Models\Setting::where('key', 'clinic_logo')->value('value');
-                $clinicLogo = ($customClinicLogo && file_exists(public_path($customClinicLogo)))
-                    ? asset($customClinicLogo)
-                    : asset('admin/assets/img/Fablead_HMS_4K.png');
+                $clinicLogo = function_exists('hms_clinic_logo') ? hms_clinic_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png');
+                $defaultLogo = function_exists('hms_default_logo') ? hms_default_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png');
 
                 $clinicName = !empty($tenant['brand_name']) ? $tenant['brand_name'] :
                     (!empty($tenant['client_name']) ? $tenant['client_name'] :
@@ -82,8 +80,8 @@
                                               <div
                                         class="col-lg-6 col-4 margin-img " style="display: flex;align-items: center;justify-content: center;">
                                         <img class="avatar user-image userProfile"
-                                            src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}"
-                                            onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
+                                            src="{{ function_exists('hms_user_profile') ? hms_user_profile() : url('public/admin/assets/img/images.png') }}"
+                                            onerror="this.onerror=null;this.src='{{ function_exists('hms_default_profile') ? hms_default_profile() : url('public/admin/assets/img/images.png') }}';"
                                             alt="Profile Image"
                                             style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid #4caf50; object-fit: cover;">
                                     </div>
@@ -249,7 +247,7 @@
                                         <div class="form-group mb-0">
                                             <label for="clinic-logo" class="text-dark">Clinic/Hospital Logo:</label>
                                             <br>
-                                            <img src="{{ Str::startsWith($clinicLogo, ['http://', 'https://']) ? $clinicLogo : asset($clinicLogo) }}" id="clinic-logo" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
+                                            <img src="{{ function_exists('hms_clinic_logo') ? hms_clinic_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png') }}" id="clinic-logo" onerror="this.onerror=null;this.src='{{ function_exists('hms_default_logo') ? hms_default_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png') }}';"
                                                 alt="Clinic Logo" class="img-fluid" style="max-height: 100px;">
                                         </div>
 
@@ -337,7 +335,7 @@
                                                             <div>
                                                                 <!-- Show the old logo if it exists -->
                                                                 @if (Auth::user()->clinic_logo)
-                                                                    <img src="{{ $clinicLogo }}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
+                                                                    <img src="{{ function_exists('hms_clinic_logo') ? hms_clinic_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png') }}" onerror="this.onerror=null;this.src='{{ function_exists('hms_default_logo') ? hms_default_logo() : url('public/admin/assets/img/Fablead_HMS_4K.png') }}';"
                                                                         id="current-clinic-logo" alt="Logo"
                                                                         class="img-fluid"
                                                                         style="max-height: 100px; margin-bottom: 10px;">
@@ -700,8 +698,8 @@
                                             <div class="col-lg-6 col-4 margin-img d-flex align-items-center justify-content-center">
     <img
         class="avatar user-image userProfile"
-        src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}"
-                                            onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
+        src="{{ function_exists('hms_user_profile') ? hms_user_profile() : url('public/admin/assets/img/images.png') }}"
+        onerror="this.onerror=null;this.src='{{ function_exists('hms_default_profile') ? hms_default_profile() : url('public/admin/assets/img/images.png') }}';"
         alt="Profile Image"
         style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid #4caf50; object-fit: cover;"
     >
@@ -927,8 +925,8 @@
                         $('#user-name-detail').text(response.user.username || 'N/A');
                         $('#user-email').text(response.user.email || 'N/A');
                         $('#user-phone').text(response.user.phone || 'N/A');
-                        var defaultProfileImg = '{{ asset("admin/assets/img/images.png") }}';
-                        var userImg = (response.user.profile && !response.user.profile.includes('default.png')) ? response.user.profile : defaultProfileImg;
+                        var defaultProfileImg = '{{ function_exists("hms_default_profile") ? hms_default_profile() : url("public/admin/assets/img/images.png") }}';
+                        var userImg = (response.user.profile && !response.user.profile.includes('default.png') && !response.user.profile.includes('img1.png')) ? response.user.profile : defaultProfileImg;
                         $('.user-image').attr('src', userImg);
 
                         // Check if userDetails exists
