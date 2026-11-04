@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\api\AiOptimizeController;
 use App\Http\Controllers\Api\CategoryController;
@@ -79,7 +79,7 @@ use App\Http\Controllers\api\PlanController;
 
 Route::get('/admin/search-google', [KnowledgeBaseController::class, 'search_google']);
 
-Route::post('/loginweb', [AuthController::class, 'login'])->name('loginweb');
+Route::middleware('web')->post('/loginweb', [AuthController::class, 'login'])->name('api.loginweb');
 Route::post('/login', [AuthController::class, 'loginAPIs'])->name('login');
 
 Route::post('/logout', [AuthController::class, 'logout']);

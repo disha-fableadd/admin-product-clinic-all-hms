@@ -290,7 +290,12 @@ Route::view('/reset-password', 'auth.reset-password')->middleware('redirect.auth
 // Route::get('/login', [LoginController::class, 'index'])->name('login');
 // Route::post('login', [LoginController::class, 'loginSubmit'])->name('login.submit');
 
-Route::get('/', [LoginController::class, 'index'])->middleware('redirect.auth')->name('login');;
+Route::post('/api/loginweb', [AuthController::class, 'login'])->name('loginweb');
+Route::post('/loginweb', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/', [AuthController::class, 'login']);
+Route::get('/login', [LoginController::class, 'index'])->middleware('redirect.auth');
+Route::get('/', [LoginController::class, 'index'])->middleware('redirect.auth')->name('login');
 
 // profile
 

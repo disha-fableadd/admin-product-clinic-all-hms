@@ -219,6 +219,9 @@ $(document).ready(function() {
                 url: "{{ url('api/loginweb') }}",
                 method: "POST",
                 contentType: "application/json",
+                xhrFields: {
+                    withCredentials: true
+                },
                 data: JSON.stringify({
                     username: username,
                     email: username,
@@ -227,9 +230,35 @@ $(document).ready(function() {
                 success: function(response) {
                     $('#loginerrorMessage').hide();
                     $('#loginsuccessMessage').text(response.message || 'Login successfully').show();
+
+                    var token = (response.data && response.data.token) ? response.data.token : '';
+                    var user = (response.data && response.data.users) ? response.data.users : null;
+                    var branchId = (user && user.branch_id) ? user.branch_id : ((response.data && response.data.branch_id) ? response.data.branch_id : '');
+                    var branchName = (user && user.branch_name) ? user.branch_name : '';
+
+                    if (token) {
+                        localStorage.setItem('token', token);
+                        localStorage.setItem('authToken', token);
+                    }
+                    if (user) {
+                        localStorage.setItem('user', JSON.stringify(user));
+                        localStorage.setItem('userId', user.id || '');
+                    }
+                    if (branchId) {
+                        localStorage.setItem('selectedBranchId', branchId);
+                    }
+                    if (branchName) {
+                        localStorage.setItem('selectedBranchName', branchName);
+                    }
+
+                    var redirectUrl = "{{ url('/dashboard') }}";
+                    if (branchId) {
+                        redirectUrl += (redirectUrl.indexOf('?') === -1 ? '?' : '&') + 'branch_id=' + encodeURIComponent(branchId);
+                    }
+
                     setTimeout(function() {
-                        window.location.href = "/dashboard";
-                    }, 1000);
+                        window.location.href = redirectUrl;
+                    }, 500);
                 },
                 error: function(xhr) {
                     var response = xhr.responseJSON;

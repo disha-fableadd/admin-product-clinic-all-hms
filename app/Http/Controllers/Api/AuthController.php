@@ -312,7 +312,7 @@ class AuthController extends Controller
     Cache::forget($attemptKey);
     Cache::forget($lockKey);
 
-    Auth::login($user);
+    Auth::login($user, true);
     $this->projectTypeSettingsService->ensureDefaultProjectType();
     $user = Auth::user();
     $token = $user->createToken('authToken')->plainTextToken;
@@ -360,7 +360,7 @@ class AuthController extends Controller
         $branch = Branch::find($user->branch_id) ?: Branch::first();
     }
 
-    session([
+    $sessionData = [
         'access_token' => $token,
         'user_id' => $user->id,
         'role' => $user->role->name ?? null,
@@ -368,7 +368,14 @@ class AuthController extends Controller
         'branch_id' => $branch->id ?? null,
         'branch_name' => $branch->name ?? null,
         'show_today_appointment_modal' => true
-    ]);
+    ];
+
+    if ($request->hasSession()) {
+        $request->session()->put($sessionData);
+        $request->session()->save();
+    } else {
+        session($sessionData);
+    }
 
     $userData = [
         'id' => $user->id,
@@ -444,7 +451,7 @@ class AuthController extends Controller
             ], 403);
         }
 
-        Auth::login($user);
+        Auth::login($user, true);
         $this->projectTypeSettingsService->ensureDefaultProjectType();
         $user = Auth::user();
 
