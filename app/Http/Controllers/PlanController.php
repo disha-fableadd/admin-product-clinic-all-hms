@@ -372,13 +372,31 @@ class PlanController extends Controller
                     : $baseDate->copy()->addYear()->toDateString();
 
                 if ($currentPlan) {
-                    $currentPlan->update([
+                    $durationVal = str_contains($cycle, 'month') ? 'month' : 'year';
+                    $planUpdatePayload = [
                         'is_active' => 1,
-                        'duration' => str_contains($cycle, 'month') ? 'month' : 'year',
+                        'duration' => $durationVal,
                         'start_date' => $renewalStartDate,
                         'end_date' => $newEndDate,
                         'total_amount' => $validated['amount'],
-                    ]);
+                    ];
+
+                    try {
+                        DB::statement("ALTER TABLE `plans` MODIFY COLUMN `duration` VARCHAR(255) NULL");
+                        $currentPlan->update($planUpdatePayload);
+                    } catch (\Illuminate\Database\QueryException $qe) {
+                        if (str_contains($qe->getMessage(), 'duration')) {
+                            try {
+                                DB::statement("ALTER TABLE `plans` MODIFY COLUMN `duration` VARCHAR(255) NULL");
+                                $currentPlan->update($planUpdatePayload);
+                            } catch (\Throwable $e2) {
+                                $planUpdatePayload['duration'] = str_contains($cycle, 'month') ? 1 : 12;
+                                $currentPlan->update($planUpdatePayload);
+                            }
+                        } else {
+                            throw $qe;
+                        }
+                    }
 
                     if (auth()->check()) {
                         auth()->user()->update(['plan_id' => $currentPlan->id]);

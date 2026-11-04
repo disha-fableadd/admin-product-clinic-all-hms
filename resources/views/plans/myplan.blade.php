@@ -159,18 +159,18 @@
                 <h4 style="font-weight: 700; color: #1e293b; margin-bottom: 5px;">My Plan Details</h4>
                 <h6 style="color: #64748b; font-weight: 400; font-size: 14px;">Overview of your active subscription plan and limits</h6>
             </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <button type="button" class="btn btn-clinic-primary fw-semibold" style="border-radius: 7px; padding: 8px 18px;" data-toggle="modal" data-target="#invoicesListModal" data-bs-toggle="modal" data-bs-target="#invoicesListModal">
-                    <i class="fas fa-file-pdf me-1 mr-1"></i> Download Invoice
+            <div class="d-flex align-items-center flex-wrap" style="gap: 12px;">
+                <button type="button" class="btn btn-clinic-primary fw-semibold mr-2 me-2 mb-2" style="border-radius: 8px; padding: 9px 20px; margin-right: 12px; margin-bottom: 8px;" data-toggle="modal" data-target="#invoicesListModal" data-bs-toggle="modal" data-bs-target="#invoicesListModal">
+                    <i class="fas fa-file-pdf mr-1 me-1"></i> Download Invoice
                 </button>
-                <button type="button" class="btn btn-clinic-outline fw-semibold" style="border-radius: 7px; padding: 8px 18px;" data-toggle="modal" data-target="#renewPlanModal" data-bs-toggle="modal" data-bs-target="#renewPlanModal">
-                    <i class="fas fa-sync-alt me-1 mr-1"></i> Renew Plan
+                <button type="button" class="btn btn-clinic-outline fw-semibold mr-2 me-2 mb-2" style="border-radius: 8px; padding: 9px 20px; margin-right: 12px; margin-bottom: 8px;" data-toggle="modal" data-target="#renewPlanModal" data-bs-toggle="modal" data-bs-target="#renewPlanModal">
+                    <i class="fas fa-sync-alt mr-1 me-1"></i> Renew Plan
                 </button>
-                <button type="button" class="btn btn-clinic-dark-outline fw-semibold" style="border-radius: 7px; padding: 8px 18px;" data-toggle="modal" data-target="#planHistoryModal" data-bs-toggle="modal" data-bs-target="#planHistoryModal">
-                    <i class="fas fa-history me-1 mr-1"></i> Plan History
+                <button type="button" class="btn btn-clinic-dark-outline fw-semibold mr-2 me-2 mb-2" style="border-radius: 8px; padding: 9px 20px; margin-right: 12px; margin-bottom: 8px;" data-toggle="modal" data-target="#planHistoryModal" data-bs-toggle="modal" data-bs-target="#planHistoryModal">
+                    <i class="fas fa-history mr-1 me-1"></i> Plan History
                 </button>
-                <a href="javascript:history.back()" class="btn btn-clinic-back fw-semibold" style="border-radius: 7px; padding: 8px 18px;">
-                    <i class="fas fa-arrow-left me-1 mr-1"></i> Back
+                <a href="javascript:history.back()" class="btn btn-clinic-back fw-semibold mb-2" style="border-radius: 8px; padding: 9px 20px; margin-bottom: 8px;">
+                    <i class="fas fa-arrow-left mr-1 me-1"></i> Back
                 </a>
             </div>
         </div>
@@ -206,52 +206,57 @@
         <div class="card plan-card-banner mb-4 border-0">
             <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-4 position-relative" style="z-index: 1;">
                 <div class="mb-2 mb-md-0" style="flex: 1; min-width: 280px;">
-                    <div class="d-flex align-items-center mb-3 flex-wrap gap-2">
-                        <h2 class="mb-0 text-white text-capitalize" style="font-weight: 700; font-size: 32px; letter-spacing: -0.5px;">{{ $plan->name }}</h2>
+                    <div class="d-flex align-items-center mb-3 flex-wrap" style="gap: 12px;">
+                        <h2 class="mb-0 text-white text-capitalize mr-3 me-3" style="font-weight: 700; font-size: 32px; letter-spacing: -0.5px;">{{ $plan->name }}</h2>
                         @if($planDaysRemaining <= 30)
-                        <span class="badge rounded-pill" style="background-color: rgba(239, 68, 68, 0.25); color: #fecaca; border: 1px solid #f87171; padding: 6px 12px; font-weight: 600; font-size: 12px;">
-                            <i class="fas fa-exclamation-triangle me-1 mr-1"></i> {{ $planDaysRemaining > 0 ? 'Expiring in ' . $planDaysRemaining . ' days' : 'Expired' }}
+                        <span class="badge rounded-pill mr-2 me-2" style="background-color: rgba(239, 68, 68, 0.25); color: #fecaca; border: 1px solid #f87171; padding: 6px 12px; font-weight: 600; font-size: 12px;">
+                            <i class="fas fa-exclamation-triangle mr-1 me-1"></i> {{ $planDaysRemaining > 0 ? 'Expiring in ' . $planDaysRemaining . ' days' : 'Expired' }}
                         </span>
                         @endif
-                        <span class="badge rounded-pill" style="background-color: rgba(255, 255, 255, 0.18); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); padding: 6px 14px; font-weight: 600; font-size: 13px;">
+                        <span class="badge rounded-pill" style="background-color: rgba(255, 255, 255, 0.18); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); padding: 7px 16px; font-weight: 600; font-size: 13px;">
                             Renewal Price: ₹{{ number_format((float)$renewalPrice, 2) }}
                         </span>
                     </div>
-                    <p class="mb-4 text-white-50" style="font-size: 14.5px; font-weight: 500;">
+                    <p class="mb-3 text-white-50" style="font-size: 14.5px; font-weight: 500;">
                         Purchased By <span class="text-white fw-bold">{{ $purchasedBy }}</span>
                     </p>
-                    <div class="d-flex gap-4 flex-wrap text-white" style="font-size: 13.5px; font-weight: 500;">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="far fa-calendar-alt text-warning me-1 mr-1"></i> Start Date: <strong>{{ $plan->start_date ? \Carbon\Carbon::parse($plan->start_date)->format('d-m-Y') : 'N/A' }}</strong>
+                    <div class="d-flex flex-wrap text-white align-items-center" style="font-size: 13.5px; font-weight: 500;">
+                        <div class="d-inline-flex align-items-center mr-4 me-4 mb-2" style="margin-right: 28px; margin-bottom: 8px;">
+                            <i class="far fa-calendar-alt text-warning mr-2 me-2" style="margin-right: 7px; font-size: 15px;"></i> Start Date:&nbsp;<strong>{{ $plan->start_date ? \Carbon\Carbon::parse($plan->start_date)->format('d-m-Y') : 'N/A' }}</strong>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="far fa-calendar-check text-warning me-1 mr-1"></i> End Date: <strong>{{ $plan->end_date ? \Carbon\Carbon::parse($plan->end_date)->format('d-m-Y') : 'N/A' }}</strong>
+                        <div class="d-inline-flex align-items-center mr-4 me-4 mb-2" style="margin-right: 28px; margin-bottom: 8px;">
+                            <i class="far fa-calendar-check text-warning mr-2 me-2" style="margin-right: 7px; font-size: 15px;"></i> End Date:&nbsp;<strong>{{ $plan->end_date ? \Carbon\Carbon::parse($plan->end_date)->format('d-m-Y') : 'N/A' }}</strong>
                         </div>
                         @if($plan->user_limit)
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-users text-warning me-1 mr-1"></i> User Limit: <strong>{{ $plan->user_limit }}</strong>
+                        <div class="d-inline-flex align-items-center mr-4 me-4 mb-2" style="margin-right: 28px; margin-bottom: 8px;">
+                            <i class="fas fa-users text-warning mr-2 me-2" style="margin-right: 7px; font-size: 15px;"></i> User Limit:&nbsp;<strong>{{ $plan->user_limit }}</strong>
                         </div>
                         @endif
                         @if($plan->branch_limit)
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-building text-warning me-1 mr-1"></i> Branch Limit: <strong>{{ $plan->branch_limit }}</strong>
+                        <div class="d-inline-flex align-items-center mr-4 me-4 mb-2" style="margin-right: 28px; margin-bottom: 8px;">
+                            <i class="fas fa-building text-warning mr-2 me-2" style="margin-right: 7px; font-size: 15px;"></i> Branch Limit:&nbsp;<strong>{{ $plan->branch_limit }}</strong>
                         </div>
                         @endif
                     </div>
                 </div>
                 
                 <!-- Right Amount Box -->
-                <div class="plan-amount-glass">
-                    <div style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.2px; color: #ffffff; opacity: 0.9; margin-bottom: 6px; font-weight: 700;">TOTAL AMOUNT</div>
-                    <h2 class="mb-1 text-white" style="font-weight: 800; font-size: 34px;">₹{{ number_format((float)($plan->total_amount ?? ($plan->price ?? 0)), 2) }}</h2>
-                    <div style="font-size: 13.5px; color: #bbf7d0; font-weight: 600;">
-                        @if($plan->duration == 'month')
-                            1 Month
-                        @elseif($plan->duration == 'year')
-                            1 Year
-                        @else
-                            {{ ucfirst($plan->duration ?? '1 Year') }}
-                        @endif
+                <div class="plan-amount-glass" style="min-width: 230px; padding: 22px 34px;">
+                    <div style="font-size: 11.5px; text-transform: uppercase; letter-spacing: 1.5px; color: #ffffff; opacity: 0.95; margin-bottom: 6px; font-weight: 700;">TOTAL AMOUNT</div>
+                    <h2 class="mb-1 text-white" style="font-weight: 800; font-size: 36px; letter-spacing: -0.5px;">₹{{ number_format((float)($plan->total_amount ?? ($plan->price ?? 0)), 2) }}</h2>
+                    @php
+                        $rawDuration = strtolower(trim((string)($plan->duration ?? '')));
+                        $tenantCycle = strtolower(trim((string)($tenantInfo['billing_cycle'] ?? '')));
+                        if (str_contains($rawDuration, 'month') || str_contains($tenantCycle, 'month') || $rawDuration === '1') {
+                            $displayDuration = '1 Month';
+                        } elseif (str_contains($rawDuration, 'year') || str_contains($tenantCycle, 'year') || $rawDuration === '12' || $rawDuration === '0' || empty($rawDuration)) {
+                            $displayDuration = '1 Year';
+                        } else {
+                            $displayDuration = ucfirst($rawDuration);
+                        }
+                    @endphp
+                    <div style="font-size: 14px; color: #bbf7d0; font-weight: 600;">
+                        {{ $displayDuration }}
                     </div>
                 </div>
             </div>
