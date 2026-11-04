@@ -25,14 +25,10 @@ class CheckPermission
             return redirect('/login');
         }
 
-        if ((string) $user->role_id === '2') {
-            return $next($request);
-        }
-
         $routeName = $request->route()?->getName();
         $normalizedRouteName = $routeName ? strtolower($routeName) : null;
 
-        // Enforce tenant module restrictions across ALL roles
+        // 1. Enforce tenant module restrictions across ALL roles (including admin)
         if (config('tenant.enabled') && function_exists('tenant_has_module')) {
             $requiredTenantModule = \App\Services\ModuleAccessService::resolveRequiredModule($request, $normalizedRouteName);
             if ($requiredTenantModule !== null && ! tenant_has_module($requiredTenantModule)) {
@@ -44,8 +40,14 @@ class CheckPermission
                 }
 
                 return redirect()->route('dashboard')
-                    ->with('error', 'You do not have permission to access this module.');
+                    ->with('error', 'You do not have permission to access this module.')
+                    ->with('error_title', 'Access Denied');
             }
+        }
+
+        // 2. Allow full access to permitted tenant modules for Admin users
+        if ((string) $user->role_id === '2' || (int) $user->role_id === 1) {
+            return $next($request);
         }
 
         if ($this->shouldSkipPermissionCheck($request, $routeName)) {
@@ -89,6 +91,12 @@ class CheckPermission
             'hide.today.appointments',
             'chart',
             'report.overview',
+            'plans.myplan',
+            'plans.details',
+            'plans.upgrade.options',
+            'plans.razorpay.createorder',
+            'plans.razorpay.verify',
+            'plans.invoice.pdf',
         ];
 
         if ($routeName && Str::startsWith($routeName, 'notification')) {
@@ -96,7 +104,7 @@ class CheckPermission
         }
 
         $firstSegment = strtolower((string) $request->segment(1));
-        if (in_array($firstSegment, ['notifications', 'all-notifications', 'dashboard', 'api'], true)) {
+        if (in_array($firstSegment, ['notifications', 'all-notifications', 'dashboard', 'api', 'my-plan', 'plans'], true)) {
             return true;
         }
 

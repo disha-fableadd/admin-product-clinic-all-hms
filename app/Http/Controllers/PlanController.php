@@ -476,6 +476,15 @@ class PlanController extends Controller
                 'success' => true,
                 'message' => 'Payment verified and plan updated successfully!',
             ]);
+            try {
+                \App\Services\PlanPermissionSyncService::syncPlanModulesAndPermissions();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('PlanPermissionSyncService error after payment: ' . $e->getMessage());
+            }
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment verified and plan updated successfully!',
+            ]);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,

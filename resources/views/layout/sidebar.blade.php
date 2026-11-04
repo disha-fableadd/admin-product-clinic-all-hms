@@ -38,7 +38,13 @@
         'user.*'
     ) || $isDashboardActive || (!$isClinicalActive && !$isAccountingActive && !$isReportsActive && !$isSettingsActive);
 
-    $hasPatientPerm = app('hasPermission')(5, 'view') || app('hasPermission')(5, 'create') || app('hasPermission')(35, 'view') || app('hasPermission')(36, 'view');
+    $showErpSection = tenant_has_module(['Patients', 'Appointments', 'Medicines', 'Followup', 'Staffs', 'Sale Bill', 'Purchase Bill', 'Vendors', 'Treatments']);
+    $showClinicalSection = tenant_has_module(['OPD', 'IPD', 'Daily Register', 'Therapy', 'Diet Chart', 'Clinical Notes', 'Diagnostic Service', 'Medical Report', 'OT & Discharge', 'Clinical Services']);
+    $showAccountingSection = tenant_has_module(['Account Ledger', 'Stock / Inventory', 'Expenses', 'Invoices', 'Accounting']);
+    $showReportsSection = tenant_has_module(['Sales Report', 'Purchase Report', 'Expense Report', 'Analytics & Summary', 'Reports', 'Report']);
+    $showSettingsSection = tenant_has_module(['Settings', 'Tax Rates', 'My Plan Details', 'Calendar', 'Knowledge Base']) || true;
+
+    $hasPatientPerm = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(5, 'create') || app('hasPermission')(35, 'view') || app('hasPermission')(36, 'view'));
 @endphp
 
 <div class="sidebar" id="sidebar">
@@ -336,7 +342,7 @@
 
                 {{-- 2. ERP (Core Business Modules) --}}
 
-                @if (tenant_has_module(['Patients', 'Appointments', 'Medicines', 'Followup', 'Staffs', 'Sale Bill', 'Purchase Bill', 'Vendors', 'Treatments']))
+                @if ($showErpSection)
                 <li class="submenu sidebar-category sidebar-category-erp {{ $isErpActive ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="{{ $isErpActive ? 'subdrop active' : '' }}">
                         <i class="fas fa-industry text-primary"></i>
@@ -391,7 +397,7 @@
                         @endif
 
                         {{-- Appointments --}}
-                        @if (app('hasPermission')(6, 'view'))
+                        @if (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'))
                             <li class="submenu sidebar-module {{ request()->routeIs('appointment.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('appointment.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-calendar-check icons"></i>
@@ -399,7 +405,7 @@
                                     <span class="menu-arrow"></span>
                                 </a>
                                 <ul style="{{ request()->routeIs('appointment.*') ? 'display: block;' : 'display: none;' }}">
-                                    @if (app('hasPermission')(6, 'view'))
+                                    @if (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'))
                                         <li class="{{ request()->routeIs('appointment.index') ? 'active' : '' }}">
                                             <a href="{{ route('appointment.index') }}" class="{{ request()->routeIs('appointment.index') ? 'active' : '' }}">
                                                 <i class="fa fa-calendar-alt icons"></i>
@@ -420,7 +426,7 @@
                         @endif
 
                          {{-- Medicines --}}
-                        @if (app('hasPermission')(1, 'view'))
+                        @if (tenant_has_module('Medicines') && (app('hasPermission')(1, 'view') || app('hasPermission')(4, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('medicine.*', 'category.*', 'brand.*', 'medicine_unit.*', 'symptoms.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('medicine.*', 'category.*', 'brand.*', 'medicine_unit.*', 'symptoms.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-pills icons"></i>
@@ -473,7 +479,7 @@
                         @endif
 
                         {{-- Followup --}}
-                        @if (app('hasPermission')(2, 'view'))
+                        @if (tenant_has_module('Followup') && app('hasPermission')(2, 'view'))
                             <li class="submenu sidebar-module {{ request()->routeIs('followup.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('followup.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-user-clock icons"></i>
@@ -481,7 +487,7 @@
                                     <span class="menu-arrow"></span>
                                 </a>
                                 <ul style="{{ request()->routeIs('followup.*') ? 'display: block;' : 'display: none;' }}">
-                                    @if (app('hasPermission')(2, 'view'))
+                                    @if (tenant_has_module('Followup') && app('hasPermission')(2, 'view'))
                                         <li class="{{ request()->routeIs('followup.index') ? 'active' : '' }}">
                                             <a href="{{ route('followup.index') }}" class="{{ request()->routeIs('followup.index') ? 'active' : '' }}">
                                                 <i class="fa fa-users icons"></i>
@@ -502,7 +508,7 @@
                         @endif
 
                         {{-- Staffs --}}
-                        @if (app('hasPermission')(3, 'view'))
+                        @if (tenant_has_module('Staffs') && app('hasPermission')(3, 'view'))
                             <li class="submenu sidebar-module {{ request()->routeIs('user.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('user.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-user-md icons"></i>
@@ -510,7 +516,7 @@
                                     <span class="menu-arrow"></span>
                                 </a>
                                 <ul style="{{ request()->routeIs('user.*') ? 'display: block;' : 'display: none;' }}">
-                                    @if (app('hasPermission')(3, 'view'))
+                                    @if (tenant_has_module('Staffs') && app('hasPermission')(3, 'view'))
                                         <li class="{{ request()->routeIs('user.index') ? 'active' : '' }}">
                                             <a href="{{ route('user.index') }}" class="{{ request()->routeIs('user.index') ? 'active' : '' }}">
                                                 <i class="fa fa-users icons"></i>
@@ -531,7 +537,7 @@
                         @endif
 
                         {{-- Sale Bill --}}
-                        @if (app('hasPermission')(20, 'view'))
+                        @if (tenant_has_module('Sale Bill') && (app('hasPermission')(20, 'view') || app('hasPermission')(18, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('sales.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('sales.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-shopping-cart icons"></i>
@@ -558,7 +564,7 @@
                         @endif
 
                         {{-- Purchase Bill --}}
-                        @if (app('hasPermission')(21, 'view'))
+                        @if (tenant_has_module('Purchase Bill') && (app('hasPermission')(21, 'view') || app('hasPermission')(11, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('purchase.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('purchase.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-file-invoice icons"></i>
@@ -591,7 +597,7 @@
                         @endif
 
                         {{-- Vendors (Renamed from Supplier) --}}
-                        @if (app('hasPermission')(24, 'view'))
+                        @if (tenant_has_module('Vendors') && (app('hasPermission')(24, 'view') || app('hasPermission')(12, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('supplier.*', 'vendor.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('supplier.*', 'vendor.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-handshake icons"></i>
@@ -618,7 +624,7 @@
                         @endif
 
                         {{-- Treatments --}}
-                        @if (app('hasPermission')(9, 'view'))
+                        @if (tenant_has_module('Treatments') && (app('hasPermission')(9, 'view') || app('hasPermission')(7, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('treatment.*', 'treatment_booking.*', 'machine.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('treatment.*', 'treatment_booking.*', 'machine.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-user-md icons"></i>
@@ -626,7 +632,7 @@
                                     <span class="menu-arrow"></span>
                                 </a>
                                 <ul style="{{ request()->routeIs('treatment.*', 'treatment_booking.*', 'machine.*') ? 'display: block;' : 'display: none;' }}">
-                                    @if (app('hasPermission')(9, 'view'))
+                                    @if (tenant_has_module('Treatments') && (app('hasPermission')(9, 'view') || app('hasPermission')(7, 'view')))
                                         <li class="{{ request()->routeIs('treatment.index') ? 'active' : '' }}">
                                             <a href="{{ route('treatment.index') }}" class="{{ request()->routeIs('treatment.index') ? 'active' : '' }}">
                                                 <i class="fa fa-notes-medical icons"></i>
@@ -669,6 +675,7 @@
                 @endif
 
                 {{-- 3. CLINICAL SERVICES (New Dedicated Menu Created After ERP) --}}
+                @if ($showClinicalSection)
                 <li class="submenu sidebar-category sidebar-category-clinical {{ $isClinicalActive ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="{{ $isClinicalActive ? 'subdrop active' : '' }}">
                         <i class="fas fa-hospital text-warning"></i>
@@ -678,7 +685,7 @@
                     <ul style="{{ $isClinicalActive ? 'display: block;' : 'display: none;' }}">
 
                         {{-- OPD --}}
-                        @if (app('hasPermission')(13, 'view'))
+                        @if (tenant_has_module('OPD') && (app('hasPermission')(13, 'view') || app('hasPermission')(23, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('opd_visit.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('opd_visit.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-plus-square icons"></i>
@@ -705,7 +712,7 @@
                         @endif
 
                         {{-- IPD --}}
-                        @if (app('hasPermission')(14, 'view'))
+                        @if (tenant_has_module('IPD') && (app('hasPermission')(14, 'view') || app('hasPermission')(25, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('ipd_admit.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('ipd_admit.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-procedures icons"></i>
@@ -732,7 +739,7 @@
                         @endif
 
                         {{-- Daily Register --}}
-                        @if (app('hasPermission')(30, 'view'))
+                        @if (tenant_has_module('Daily Register') && (app('hasPermission')(30, 'view') || app('hasPermission')(28, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('daily_data.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('daily_data.*') ? 'subdrop active' : '' }}">
                                     <i class="fas fa-file-medical-alt icons"></i>
@@ -759,7 +766,7 @@
                         @endif
 
                         {{-- Therapy --}}
-                        @if (app('hasPermission')(33, 'view'))
+                        @if (tenant_has_module('Therapy') && (app('hasPermission')(33, 'view') || app('hasPermission')(26, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('therapy.*', 'assign-therapy.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('therapy.*', 'assign-therapy.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-hand-holding-medical icons"></i>
@@ -792,7 +799,7 @@
                         @endif
 
                         {{-- Diet Chart --}}
-                        @if (app('hasPermission')(34, 'view'))
+                        @if (tenant_has_module('Diet Chart') && app('hasPermission')(34, 'view'))
                             <li class="submenu sidebar-module {{ request()->routeIs('dietchart.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('dietchart.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-apple-alt icons"></i>
@@ -819,7 +826,7 @@
                         @endif
 
                         {{-- Clinical Notes --}}
-                        @if (app('hasPermission')(28, 'view') || app('hasPermission')(27, 'view'))
+                        @if (tenant_has_module('Clinical Notes') && (app('hasPermission')(28, 'view') || app('hasPermission')(27, 'view') || app('hasPermission')(31, 'view') || app('hasPermission')(32, 'view') || app('hasPermission')(33, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('assessment.*', 'homeadvice.*', 'soap.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('assessment.*', 'homeadvice.*', 'soap.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-notes-medical icons"></i>
@@ -854,7 +861,7 @@
                         @endif
 
                         {{-- Diagnostic Services --}}
-                        @if (app('hasPermission')(17, 'view') || app('hasPermission')(18, 'view') || app('hasPermission')(19, 'view'))
+                        @if (tenant_has_module('Diagnostic Service') && (app('hasPermission')(17, 'view') || app('hasPermission')(18, 'view') || app('hasPermission')(19, 'view') || app('hasPermission')(8, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('pathology.*', 'pathology_reports.*', 'radiology-tests.*', 'radiology-reports.*', 'service.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('pathology.*', 'pathology_reports.*', 'radiology-tests.*', 'radiology-reports.*', 'service.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-microscope icons"></i>
@@ -903,7 +910,7 @@
                         @endif
 
                         {{-- Medical Reports --}}
-                        @if (app('hasPermission')(25, 'view'))
+                        @if (tenant_has_module('Medical Report') && (app('hasPermission')(25, 'view') || app('hasPermission')(13, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('report.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('report.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-file-medical icons"></i>
@@ -930,7 +937,7 @@
                         @endif
 
                         {{-- OT & Discharge --}}
-                        @if (app('hasPermission')(15, 'view') || app('hasPermission')(16, 'view'))
+                        @if (tenant_has_module('OT & Discharge') && (app('hasPermission')(15, 'view') || app('hasPermission')(16, 'view') || app('hasPermission')(10, 'view') || app('hasPermission')(24, 'view')))
                             <li class="submenu sidebar-module {{ request()->routeIs('ot.*', 'discharge.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('ot.*', 'discharge.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-heartbeat icons"></i>
@@ -961,8 +968,10 @@
                     </ul>
                 </li>
 
+                @endif
+
                 {{-- 4. ACCOUNTING (Includes Account Ledger, Stock / Inventory, Expenses, Invoices) --}}
-                @if (app('hasPermission')(22, 'view') || app('hasPermission')(23, 'view') || app('hasPermission')(26, 'view') || app('hasPermission')(31, 'view'))
+                @if ($showAccountingSection && (app('hasPermission')(22, 'view') || app('hasPermission')(23, 'view') || app('hasPermission')(26, 'view') || app('hasPermission')(31, 'view')))
                     <li class="submenu sidebar-category sidebar-category-accounting {{ $isAccountingActive ? 'active' : '' }}">
                         <a href="javascript:void(0);" class="{{ $isAccountingActive ? 'subdrop active' : '' }}">
                             <i class="fas fa-calculator text-success"></i>
@@ -971,7 +980,7 @@
                         </a>
                         <ul style="{{ $isAccountingActive ? 'display: block;' : 'display: none;' }}">
                             {{-- Account Ledger --}}
-                            @if (app('hasPermission')(31, 'view'))
+                            @if (tenant_has_module('Account Ledger') && app('hasPermission')(31, 'view'))
                                 <li class="sidebar-module {{ request()->routeIs('account_ledger.*') ? 'active' : '' }}">
                                     <a href="{{ route('account_ledger.index') }}" class="{{ request()->routeIs('account_ledger.index') ? 'active' : '' }}">
                                         <i class="fas fa-book icons"></i>
@@ -981,7 +990,7 @@
                             @endif
 
                             {{-- Stock / Inventory (Moved to Accounting per instruction) --}}
-                            @if (app('hasPermission')(23, 'view'))
+                            @if (tenant_has_module('Stock / Inventory') && (app('hasPermission')(23, 'view') || app('hasPermission')(11, 'view')))
                                 <li class="sidebar-module {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
                                     <a href="{{ route('inventory.index') }}" class="{{ request()->routeIs('inventory.index') ? 'active' : '' }}">
                                         <i class="fas fa-warehouse icons"></i>
@@ -991,7 +1000,7 @@
                             @endif
 
                             {{-- Expenses --}}
-                            @if (app('hasPermission')(22, 'view'))
+                            @if (tenant_has_module('Expenses') && (app('hasPermission')(22, 'view') || app('hasPermission')(5, 'view')))
                                 <li class="submenu sidebar-module {{ request()->routeIs('expense.*') ? 'active' : '' }}">
                                     <a href="javascript:void(0);" class="{{ request()->routeIs('expense.*') ? 'subdrop active' : '' }}">
                                         <i class="fas fa-money-bill-wave icons"></i>
@@ -1018,7 +1027,7 @@
                             @endif
 
                             {{-- Invoices --}}
-                            @if (app('hasPermission')(26, 'view'))
+                            @if (tenant_has_module('Invoices') && (app('hasPermission')(26, 'view') || app('hasPermission')(18, 'view')))
                                 <li class="sidebar-module {{ request()->routeIs('invoice.*') ? 'active' : '' }}">
                                     <a href="{{ route('invoice.index') }}" class="{{ request()->routeIs('invoice.index') ? 'active' : '' }}">
                                         <i class="fas fa-file-invoice-dollar icons"></i>
@@ -1031,6 +1040,7 @@
                 @endif
 
                 {{-- 5. REPORTS --}}
+                @if ($showReportsSection)
                 <li class="submenu sidebar-category sidebar-category-reports {{ $isReportsActive ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="{{ $isReportsActive ? 'subdrop active' : '' }}">
                         <i class="fas fa-chart-line" style="color: #6f42c1;"></i>
@@ -1062,7 +1072,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (app('hasPermission')(32, 'view'))
+                        @if (tenant_has_module(['Analytics & Summary', 'Reports', 'Report']) && (app('hasPermission')(32, 'view') || app('hasPermission')(14, 'view')))
                             <li class="sidebar-module {{ request()->routeIs('chart') ? 'active' : '' }}">
                                 <a href="{{ route('chart') }}" class="{{ request()->routeIs('chart') ? 'active' : '' }}">
                                     <i class="fa fa-chart-area icons"></i>
@@ -1073,6 +1083,8 @@
                     </ul>
                 </li>
 
+                @endif
+
                 {{-- 6. SETTINGS --}}
                 <li class="submenu sidebar-category sidebar-category-settings {{ $isSettingsActive ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="{{ $isSettingsActive ? 'subdrop active' : '' }}">
@@ -1081,7 +1093,7 @@
                         <span class="menu-arrow"></span>
                     </a>
                     <ul style="{{ $isSettingsActive ? 'display: block;' : 'display: none;' }}">
-                        @if (app('hasPermission')(4, 'view'))
+                        @if (tenant_has_module('Settings') && (app('hasPermission')(4, 'view') || app('hasPermission')(15, 'view')))
                             <li class="sidebar-module {{ request()->routeIs('sms.template') ? 'active' : '' }}">
                                 <a href="{{ route('sms.template') }}" class="{{ request()->routeIs('sms.template') ? 'active' : '' }}">
                                     <i class="fa fa-store icons"></i>
@@ -1089,7 +1101,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (app('hasPermission')(21, 'view') && Route::has('taxrate.index'))
+                        @if (tenant_has_module('Tax Rates') && (app('hasPermission')(21, 'view') || app('hasPermission')(35, 'view')) && Route::has('taxrate.index'))
                             <li class="sidebar-module {{ request()->routeIs('taxrate.index') ? 'active' : '' }}">
                                 <a href="{{ route('taxrate.index') }}" class="{{ request()->routeIs('taxrate.index') ? 'active' : '' }}">
                                     <i class="fa fa-percent icons"></i>
@@ -1097,7 +1109,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (Route::has('plans.myplan'))
+                        @if (tenant_has_module('My Plan Details') && Route::has('plans.myplan'))
                             <li class="sidebar-module {{ request()->routeIs('plans.myplan') ? 'active' : '' }}">
                                 <a href="{{ route('plans.myplan') }}" class="{{ request()->routeIs('plans.myplan') ? 'active' : '' }}">
                                     <i class="fa fa-crown icons"></i>
@@ -1106,7 +1118,7 @@
                             </li>
                         @endif
                      
-                        @if (Route::has('calender.index'))
+                        @if (tenant_has_module('Calendar') && Route::has('calender.index'))
                             <li class="sidebar-module {{ request()->routeIs('calender.index') ? 'active' : '' }}">
                                 <a href="{{ route('calender.index') }}" class="{{ request()->routeIs('calender.index') ? 'active' : '' }}">
                                     <i class="fa fa-calendar-alt icons"></i>

@@ -411,6 +411,17 @@ class TenantManager
         $this->tenant = $tenant;
         app()->instance('tenant', $tenant);
 
+        // Keep tenant modules and permissions synced with active plan / assigned modules
+        try {
+            static $alreadySynced = false;
+            if (!$alreadySynced) {
+                $alreadySynced = true;
+                \App\Services\PlanPermissionSyncService::syncPlanModulesAndPermissions();
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('PlanPermissionSyncService error during tenant activation: ' . $e->getMessage());
+        }
+
         return $tenant;
     }
 
