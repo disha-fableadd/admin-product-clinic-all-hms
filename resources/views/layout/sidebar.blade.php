@@ -332,9 +332,9 @@
                         <span>Dashboard</span>
                     </a>
                 </li>
+                @endif
 
                 {{-- 2. ERP (Core Business Modules) --}}
-@endif
 
                 @if (tenant_has_module(['Patients', 'Appointments', 'Medicines', 'Followup', 'Staffs', 'Sale Bill', 'Purchase Bill', 'Vendors', 'Treatments']))
                 <li class="submenu sidebar-category sidebar-category-erp {{ $isErpActive ? 'active' : '' }}">
@@ -666,6 +666,7 @@
 
                     </ul>
                 </li>
+                @endif
 
                 {{-- 3. CLINICAL SERVICES (New Dedicated Menu Created After ERP) --}}
                 <li class="submenu sidebar-category sidebar-category-clinical {{ $isClinicalActive ? 'active' : '' }}">
@@ -1113,8 +1114,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (Route::has('knowledge.index'))
-                            @if (tenant_has_module('Knowledge Base'))
+                        @if (Route::has('knowledge.index') && tenant_has_module('Knowledge Base'))
                         <li class="sidebar-module {{ request()->routeIs('knowledge.index') ? 'active' : '' }}">
                                 <a href="{{ route('knowledge.index') }}" class="{{ request()->routeIs('knowledge.index') ? 'active' : '' }}">
                                     <i class="fa fa-book-open icons"></i>
