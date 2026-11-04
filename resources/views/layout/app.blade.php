@@ -64,15 +64,16 @@
 
     <script src=" https://code.jquery.com/jquery-3.7.1.js"></script>
     <script>
-        window.apiToken = localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
-        window.token = window.apiToken;
-        if (window.apiToken && !localStorage.getItem('token')) {
-            localStorage.setItem('token', window.apiToken);
+        var token = localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
+        window.apiToken = token;
+        window.token = token;
+        if (token && !localStorage.getItem('token')) {
+            localStorage.setItem('token', token);
         }
         if (window.jQuery) {
             $.ajaxSetup({
                 headers: {
-                    'Authorization': window.apiToken ? ('Bearer ' + window.apiToken) : '',
+                    'Authorization': token ? ('Bearer ' + token) : '',
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });

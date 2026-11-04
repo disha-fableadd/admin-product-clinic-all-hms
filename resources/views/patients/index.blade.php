@@ -202,7 +202,7 @@
 
 
     <script>
-        let token = window.token || localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
+        var token = window.token || localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
         $('.yearfilter').select2({
 
             width: '100%',
