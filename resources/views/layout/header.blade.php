@@ -1919,7 +1919,7 @@
 
             headers: {
 
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + (window.token || localStorage.getItem('token') || '')
 
             },
 

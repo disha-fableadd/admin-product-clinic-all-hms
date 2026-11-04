@@ -78,6 +78,35 @@ class User extends Authenticatable
         return $this->belongsTo(Plan::class, 'plan_id', 'id');
     }
 
+    public function getActivePlan()
+    {
+        if ($this->plan_id) {
+            $plan = $this->plan ?? \App\Models\Plan::find($this->plan_id);
+            if ($plan && $plan->is_active) {
+                return $plan;
+            }
+        }
+
+        $activePlan = \App\Models\Plan::where('is_active', 1)->latest('id')->first();
+        if ($activePlan) {
+            return $activePlan;
+        }
+
+        return \App\Models\Plan::latest('id')->first();
+    }
+
+    public function getLatestPlan()
+    {
+        if ($this->plan_id) {
+            $plan = $this->plan ?? \App\Models\Plan::find($this->plan_id);
+            if ($plan) {
+                return $plan;
+            }
+        }
+
+        return \App\Models\Plan::latest('id')->first();
+    }
+
     // public function getProfileAttribute($value)
     // {
     //     return $value ? asset("storage/{$value}") : asset('default-user.png');

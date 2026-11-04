@@ -370,6 +370,17 @@ class AuthController extends Controller
         'show_today_appointment_modal' => true
     ];
 
+    try {
+        $tenantManager = app(\App\Services\Tenancy\TenantManager::class);
+        if ($tenantManager->enabled() && !empty($user->email)) {
+            $tenant = $tenantManager->resolveByEmail($user->email);
+            $sessionData['tenant_id'] = $tenant['id'];
+            $sessionData['tenant'] = $tenant;
+        }
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::warning('Tenant resolve during login failed: ' . $e->getMessage());
+    }
+
     if ($request->hasSession()) {
         $request->session()->put($sessionData);
         $request->session()->save();
