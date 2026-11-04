@@ -15,7 +15,8 @@
     <meta charset="utf-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
-<meta name="robots" content="noindex, nofollow"> 
+<meta name="robots" content="noindex, nofollow">
+    <meta name="csrf-token" content="{{ csrf_token() }}"> 
  
 <!-- <link rel="shortcut icon" type="image/x-icon" href="{{asset(env('IMAGE_PATH').'admin/assets/img/favicon.ico')}}"> -->
 
@@ -62,6 +63,21 @@
         rel="stylesheet">
 
     <script src=" https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script>
+        window.apiToken = localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
+        window.token = window.apiToken;
+        if (window.apiToken && !localStorage.getItem('token')) {
+            localStorage.setItem('token', window.apiToken);
+        }
+        if (window.jQuery) {
+            $.ajaxSetup({
+                headers: {
+                    'Authorization': window.apiToken ? ('Bearer ' + window.apiToken) : '',
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                }
+            });
+        }
+    </script>
     <script src="{{ asset(env('IMAGE_PATH') . 'admin/assets/js/select2.min.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

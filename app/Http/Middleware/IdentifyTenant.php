@@ -15,13 +15,37 @@ class IdentifyTenant
 {
     public function __construct(private readonly TenantManager $tenancy) {}
 
-    public function handle(Request $request, Closure $next): Response
+        public function handle(Request $request, Closure $next): Response
     {
         if (! $this->tenancy->enabled()) {
             return $next($request);
         }
 
-        // If a tenant session already exists, resolve and activate that tenant
+        // 1. Resolve tenant via Bearer token (Sanctum) if present
+        if ($bearerToken = $request->bearerToken()) {
+            try {
+                $tokenModel = \Laravel\Sanctum\PersonalAccessToken::findToken($bearerToken);
+                if ($tokenModel && $tokenModel->tokenable) {
+                    $user = $tokenModel->tokenable;
+                    \Illuminate\Support\Facades\Auth::setUser($user);
+                    if (!empty($user->email)) {
+                        $forceFresh = $request->has('refresh_tenant') || $request->has('refresh_permissions');
+                        $tenant = $this->tenancy->resolveByEmail($user->email, $forceFresh);
+                        if ($request->hasSession()) {
+                            $request->session()->put('tenant_id', $tenant['id']);
+                            $request->session()->put('tenant', $tenant);
+                        }
+                        return $next($request);
+                    }
+                }
+            } catch (TenantResolutionException $e) {
+                return $this->deny($request, $e);
+            } catch (\Throwable $e) {
+                // fallback to other checks
+            }
+        }
+
+        // 2. If a tenant session already exists, resolve and activate that tenant
         if ($request->hasSession() && $request->session()->has('tenant_id')) {
             try {
                 $tenantId = (int) $request->session()->get('tenant_id');
@@ -52,29 +76,35 @@ class IdentifyTenant
             }
         }
 
-        // If user is already authenticated via session cookie but tenant_id is missing from session,
-        // recover tenant using authenticated user's email or cleanly log out to prevent redirect loops.
-        if ($request->hasSession() && \Illuminate\Support\Facades\Auth::check()) {
+        // 3. If user is authenticated via session cookie or access_token in session
+        if ($request->hasSession()) {
             $user = \Illuminate\Support\Facades\Auth::user();
+            if (!$user && $request->session()->has('user_id')) {
+                $user = \App\Models\User::find($request->session()->get('user_id'));
+                if ($user) {
+                    \Illuminate\Support\Facades\Auth::setUser($user);
+                }
+            }
+
             if ($user && !empty($user->email)) {
                 try {
-                    $tenant = $this->tenancy->resolveByEmail($user->email);
+                    $forceFresh = $request->has('refresh_tenant') || $request->has('refresh_permissions');
+                    $tenant = $this->tenancy->resolveByEmail($user->email, $forceFresh);
                     $request->session()->put('tenant_id', $tenant['id']);
                     $request->session()->put('tenant', $tenant);
 
                     return $next($request);
+                } catch (TenantResolutionException $e) {
+                    return $this->deny($request, $e);
                 } catch (\Throwable) {
                     \Illuminate\Support\Facades\Auth::logout();
                     $request->session()->invalidate();
                     $request->session()->regenerateToken();
                 }
-            } else {
-                \Illuminate\Support\Facades\Auth::logout();
-                $request->session()->invalidate();
             }
         }
 
-        // If request is on central domain or localhost and not yet authenticated, handle public endpoints
+        // 4. If request is on central domain or localhost and not yet authenticated, handle public endpoints
         $centralHost = static::isCentralHost($request->getHost());
 
         // For public login, logout, and password recovery endpoints, allow passing through
@@ -100,8 +130,28 @@ class IdentifyTenant
             return $next($request);
         }
 
-        // On central domain without a tenant session, redirect unauthenticated users to login
+        // 5. On central domain without a tenant session, check auth before redirect/denial
         if ($centralHost) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            if (!$user && $request->bearerToken()) {
+                $user = \Laravel\Sanctum\PersonalAccessToken::findToken($request->bearerToken())?->tokenable;
+            }
+
+            if ($user && !empty($user->email)) {
+                try {
+                    $tenant = $this->tenancy->resolveByEmail($user->email);
+                    if ($request->hasSession()) {
+                        $request->session()->put('tenant_id', $tenant['id']);
+                        $request->session()->put('tenant', $tenant);
+                    }
+                    return $next($request);
+                } catch (TenantResolutionException $e) {
+                    return $this->deny($request, $e);
+                } catch (\Throwable) {
+                    // proceed to deny/unauthenticated
+                }
+            }
+
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json(['status' => false, 'error' => 'Unauthenticated'], 401);
             }
@@ -111,7 +161,7 @@ class IdentifyTenant
             return $next($request);
         }
 
-        // Otherwise attempt domain resolution (subdomain-based access)
+        // 6. Otherwise attempt domain resolution (subdomain-based access)
         try {
             $this->tenancy->resolveByHost($request->getHost());
         } catch (TenantResolutionException $e) {
