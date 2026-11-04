@@ -1088,20 +1088,21 @@
     $currentProjectType = ProjectType::find($currentProjectTypeId);
     $projectTypes = ProjectType::where('status', 1)->orderBy('id')->get();
 
+    $hdrTenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
     $headerPlan = null;
-    $headerPlanName = 'Starter';
-    $headerPlanExpiry = null;
+    $headerPlanName = $hdrTenant['plan_name'] ?? 'Starter';
+    $headerPlanExpiry = $hdrTenant['expiry_date'] ?? null;
 
-    if ($user) {
-        $headerPlan = $user->plan()->first() ?? \App\Models\Plan::find($user->plan_id ?? null);
+    if ($user && method_exists($user, 'getActivePlan')) {
+        $headerPlan = $user->getActivePlan();
+    }
+    if (!$headerPlan) {
+        $headerPlan = \App\Models\Plan::where('is_active', 1)->latest('id')->first() ?? \App\Models\Plan::latest('id')->first();
     }
 
     if ($headerPlan) {
-        $headerPlanName = $headerPlan->name ?? 'Starter';
-        $headerPlanExpiry = $headerPlan->end_date ? \Carbon\Carbon::parse($headerPlan->end_date)->format('d-m-Y') : null;
-    } else {
-        $headerPlanName = Setting::where('key', 'current_plan_name')->value('value') ?? 'Starter';
-        $headerPlanExpiry = Setting::where('key', 'current_plan_expiry')->value('value');
+        $headerPlanName = $headerPlan->name ?: ($hdrTenant['plan_name'] ?? 'Starter');
+        $headerPlanExpiry = $headerPlan->end_date ? \Carbon\Carbon::parse($headerPlan->end_date)->format('d-m-Y') : ($headerPlanExpiry ? \Carbon\Carbon::parse($headerPlanExpiry)->format('d-m-Y') : null);
     }
 
 @endphp
@@ -1111,28 +1112,25 @@
     <div class="header-left d-flex align-items-center h-100">
 
         <a href="{{ route('dashboard') }}" class="logo">
-
             @php
-                
-
-                $clinicLogo =
-                    Setting::where('key', 'clinic_logo')->value('value') ??
-                    env('IMAGE_PATH') . 'admin/assets/img/cliniclogo.png';
-                $clinicName = Setting::where('key', 'clinic_name')->value('value') ?? 'Clinic';
+                use App\Models\Setting;
+                $hdrTenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
+                $customLogo = Setting::where('key', 'clinic_logo')->value('value');
+                $clinicLogo = ($customLogo && file_exists(public_path($customLogo)))
+                    ? asset($customLogo)
+                    : asset('admin/assets/img/Fablead_HMS_4K.png');
+                $clinicName = !empty($hdrTenant['brand_name']) ? $hdrTenant['brand_name'] :
+                    (!empty($hdrTenant['client_name']) ? $hdrTenant['client_name'] :
+                    (Setting::where('key', 'clinic_name')->value('value') ?: 'Fablead HMS'));
             @endphp
-
-            <img src="{{ asset(env('IMAGE_PATH') . $clinicLogo) }}" class="regular-logo" alt="{{ $clinicName }}"
+            <img src="{{ $clinicLogo }}" class="regular-logo" alt="{{ $clinicName }}"
+                onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
                 style="height:auto;width:100%">
-            {{-- <span class="clinic_name" style="font-size:15px !important">{{ $clinicName }}</span> --}}
-
         </a>
-
         <a href="{{ route('dashboard') }}" class="logo1">
-
-            <img src="{{ asset(env('IMAGE_PATH') . $clinicLogo) }}" alt="Mini Logo" class="mini-logo"
+            <img src="{{ $clinicLogo }}" alt="Mini Logo" class="mini-logo"
+                onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
                 style="height:auto;width:70%;">
-
-
         </a>
 
     </div>
@@ -1336,7 +1334,7 @@
 
                 <span class="user-img">
                     <img class="rounded-circle mr-1 user-image"
-                        src="{{ Auth::user()->profile ? asset(Auth::user()->profile) : asset('/admin/assets/img/img1.png') }}"
+                        src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
                         width="30" alt="Profile Image">
 
                     <span class="status online"></span>
@@ -1353,7 +1351,7 @@
                 <a class="dropdown-item py-2 d-flex align-items-center" href="{{ route('profile') }}"
                     style="font-size: 16px;">
                     <img class="rounded-circle mr-2 user-image"
-                        src="{{ Auth::user()->profile ? asset(Auth::user()->profile) : asset('/admin/assets/img/img1.png') }}"
+                        src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
                         width="30" alt="Profile Image">
                     <span class="user-name">{{ Auth::user()->name }}</span>
                 </a>
@@ -1931,7 +1929,9 @@
 
                 if (response.user) {
 
-                    $('.user-image').attr('src', response.user.profile);
+                    var defaultProfile = '{{ asset("admin/assets/img/images.png") }}';
+                    var userImg = (response.user.profile && !response.user.profile.includes('default.png')) ? response.user.profile : defaultProfile;
+                    $('.user-image').attr('src', userImg);
 
 
 

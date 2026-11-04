@@ -119,7 +119,7 @@
             <form action="" method="POST" id="login-form">
                 @csrf
                 <div class="account-logo1">
-                    <img src="{{ asset((env('IMAGE_PATH') ?: '') . 'admin/assets/img/logo/Fablead_HMS_4K.png') }}" class="regular-logo" alt="Fablead HMS">
+                    <img src="{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}" class="regular-logo" alt="Fablead HMS" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/logo/Fablead_HMS_4K.png') }}';">
                 </div>
                 <div class="form-group">
                     <label>Username</label>

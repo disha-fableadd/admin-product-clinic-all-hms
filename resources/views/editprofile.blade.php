@@ -537,7 +537,7 @@
                                             <label><i class="fas fa-image icon-style"></i> Profile Image</label>
                                             <div>
                                                 <img id="profilePreview"
-                                                    src="{{ asset($patient->profile ?? 'admin/assets/img/img1.png') }}"
+                                                    src="{{ asset($patient->profile ?? 'admin/assets/img/images.png') }}"
                                                     alt="Profile Image" width="100" height="100"
                                                     style="border-radius: 10px; object-fit: cover; border: 1px solid #ccc;">
                                             </div>
@@ -934,7 +934,7 @@
                         if (patient.profile) {
                             $('#profilePreview').attr('src', '' + patient.profile); // Ensure path is correct
                         } else {
-                            $('#profilePreview').attr('src', '{{ asset("admin/assets/img/img1.png") }}');
+                            $('#profilePreview').attr('src', '{{ asset("admin/assets/img/images.png") }}');
                         }
                         $("input[name='email']").val(patient.email);
                         $("input[name='phone']").val(patient.phone);

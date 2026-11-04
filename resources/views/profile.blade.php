@@ -29,16 +29,33 @@
             @php
                 $userRole = optional(Auth::user()->role)->name;
                 use App\Models\Setting;
+                $tenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
 
-                $clinicLogo =
-                    Setting::where('key', 'clinic_logo')->value('value') ??
-                    env('IMAGE_PATH') . 'admin/assets/img/cliniclogo.png';
-                $clinicName = Setting::where('key', 'clinic_name')->value('value') ?? 'Clinic';
-                $email = Setting::where('key', 'clinic_email')->value('value') ?? 'Email';
-                $phone = Setting::where('key', 'clinic_phone')->value('value') ?? 'Phone';
-                $address = Setting::where('key', 'clinic_address')->value('value') ?? 'Address';
-                $city = Setting::where('key', 'clinic_city')->value('value') ?? 'City';
-                $state = Setting::where('key', 'clinic_state')->value('value') ?? 'State';
+                $customClinicLogo = Setting::where('key', 'clinic_logo')->value('value');
+                $clinicLogo = ($customClinicLogo && file_exists(public_path($customClinicLogo)))
+                    ? asset($customClinicLogo)
+                    : asset('admin/assets/img/Fablead_HMS_4K.png');
+
+                $clinicName = !empty($tenant['brand_name']) ? $tenant['brand_name'] :
+                    (!empty($tenant['client_name']) ? $tenant['client_name'] :
+                    (Setting::where('key', 'clinic_name')->value('value') ?: 'Fablead-HMS'));
+
+                $email = !empty($tenant['email']) ? $tenant['email'] :
+                    (Setting::where('key', 'clinic_email')->value('value') ?: (Auth::user()->email ?? 'fableadHMS@gmail.com'));
+
+                $phone = !empty($tenant['phone']) ? $tenant['phone'] :
+                    (!empty($tenant['mobile']) ? $tenant['mobile'] :
+                    (Setting::where('key', 'clinic_phone')->value('value') ?: (Auth::user()->phone ?? '5236012032')));
+
+                $address = Setting::where('key', 'clinic_address')->value('value') ?:
+                    (!empty($tenant['address']) ? $tenant['address'] : (!empty($tenant['location']) ? $tenant['location'] : 'main st'));
+
+                $city = !empty($tenant['city']) ? $tenant['city'] :
+                    (!empty($tenant['location']) ? $tenant['location'] :
+                    (Setting::where('key', 'clinic_city')->value('value') ?: 'surat'));
+
+                $state = Setting::where('key', 'clinic_state')->value('value') ?:
+                    (!empty($tenant['state']) ? $tenant['state'] : 'Gujarat');
                 $tax = Setting::where('key', 'tax_name')->value('value') ?? 'Tax';
                 $type = Setting::where('key', 'tax_type')->value('value') ?? 'Type';
                 $value = Setting::where('key', 'value')->value('value') ?? '0';
@@ -65,7 +82,8 @@
                                               <div
                                         class="col-lg-6 col-4 margin-img " style="display: flex;align-items: center;justify-content: center;">
                                         <img class="avatar user-image userProfile"
-                                            src="{{ Auth::user()->profile ? asset(Auth::user()->profile) : asset('/admin/assets/img/img1.png') }}"
+                                            src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}"
+                                            onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
                                             alt="Profile Image"
                                             style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid #4caf50; object-fit: cover;">
                                     </div>
@@ -93,19 +111,21 @@
                                                         @if (Auth::check())
                                                             @php
                                                                 $currentUser = Auth::user();
-                                                                $planId = $currentUser->plan_id;
-                                                                if (!$planId && $currentUser->created_by) {
-                                                                    $creator = \App\Models\User::find($currentUser->created_by);
-                                                                    $planId = $creator ? $creator->plan_id : null;
+                                                                $activePlan = null;
+                                                                if ($currentUser && method_exists($currentUser, 'getActivePlan')) {
+                                                                    $activePlan = $currentUser->getActivePlan();
                                                                 }
-                                                                $planName = $planId ? \App\Models\Plan::find($planId)?->name : 'Free';
+                                                                if (!$activePlan) {
+                                                                    $activePlan = \App\Models\Plan::where('is_active', 1)->latest('id')->first() ?? \App\Models\Plan::latest('id')->first();
+                                                                }
+                                                                $planTenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
+                                                                $planName = $activePlan->name ?? ($planTenant['plan_name'] ?? 'Starter');
                                                             @endphp
-                                                            <a href="" style="padding-right:10px">
+                                                            <a href="{{ route('plans.myplan') }}" style="padding-right:10px">
                                                                 <button class="btn custom-btn"
-                                                                    style="background-color: #87ceb0;font-weight: 500;">
-                                                                    <i class="fa fa-crown"></i>
+                                                                    style="background-color: #87ceb0;font-weight: 600; color: #0d2822; padding: 6px 14px; border-radius: 6px;">
+                                                                    <i class="fa fa-crown text-warning mr-1 me-1"></i>
                                                                     {{ Str::title($planName) }}
-                                                                    
                                                                 </button>
                                                             </a>
                                                         @endif
@@ -229,7 +249,7 @@
                                         <div class="form-group mb-0">
                                             <label for="clinic-logo" class="text-dark">Clinic/Hospital Logo:</label>
                                             <br>
-                                            <img src="{{ asset(env('IMAGE_PATH') . $clinicLogo) }}" id="clinic-logo"
+                                            <img src="{{ Str::startsWith($clinicLogo, ['http://', 'https://']) ? $clinicLogo : asset($clinicLogo) }}" id="clinic-logo" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
                                                 alt="Clinic Logo" class="img-fluid" style="max-height: 100px;">
                                         </div>
 
@@ -317,7 +337,7 @@
                                                             <div>
                                                                 <!-- Show the old logo if it exists -->
                                                                 @if (Auth::user()->clinic_logo)
-                                                                    <img src="{{ asset(env('IMAGE_PATH') . Auth::user()->clinic_logo ?? env('IMAGE_PATH') . 'admin/assets/img/cliniclogo.png') }}"
+                                                                    <img src="{{ $clinicLogo }}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/Fablead_HMS_4K.png') }}';"
                                                                         id="current-clinic-logo" alt="Logo"
                                                                         class="img-fluid"
                                                                         style="max-height: 100px; margin-bottom: 10px;">
@@ -680,7 +700,8 @@
                                             <div class="col-lg-6 col-4 margin-img d-flex align-items-center justify-content-center">
     <img
         class="avatar user-image userProfile"
-        src="{{ Auth::user()->profile ? asset(Auth::user()->profile) : asset('/admin/assets/img/img1.png') }}"
+        src="{{ (Auth::user()->profile && file_exists(public_path(Auth::user()->profile))) ? asset(Auth::user()->profile) : asset('admin/assets/img/images.png') }}"
+                                            onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/images.png') }}';"
         alt="Profile Image"
         style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid #4caf50; object-fit: cover;"
     >
@@ -906,7 +927,9 @@
                         $('#user-name-detail').text(response.user.username || 'N/A');
                         $('#user-email').text(response.user.email || 'N/A');
                         $('#user-phone').text(response.user.phone || 'N/A');
-                        $('.user-image').attr('src', response.user.profile || '/default-profile.png');
+                        var defaultProfileImg = '{{ asset("admin/assets/img/images.png") }}';
+                        var userImg = (response.user.profile && !response.user.profile.includes('default.png')) ? response.user.profile : defaultProfileImg;
+                        $('.user-image').attr('src', userImg);
 
                         // Check if userDetails exists
                         if (response.userDetails) {
