@@ -107,13 +107,22 @@ class User extends Authenticatable
         return \App\Models\Plan::latest('id')->first();
     }
 
-    // public function getProfileAttribute($value)
-    // {
-    //     return $value ? asset("storage/{$value}") : asset('default-user.png');
-    // }
-
     public function getProfileAttribute($value)
     {
-        return $value ? asset(env('IMAGE_PATH') . "{$value}") : asset(env('IMAGE_PATH') . '/admin/assets/img/img1.png');
+        if (!empty($value) && !in_array($value, ['default.png', 'default.webp', 'img1.png', 'images.png', 'admin/assets/img/images.png', 'admin/assets/img/img1.png'], true)) {
+            if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+                return $value;
+            }
+            $clean = ltrim($value, '/');
+            if (str_starts_with($clean, 'public/')) {
+                return url($clean);
+            }
+            if (!str_starts_with($clean, 'profile/') && !str_starts_with($clean, 'uploads/')) {
+                $clean = 'profile/' . $clean;
+            }
+            return url('public/' . $clean);
+        }
+
+        return url('public/admin/assets/img/images.png');
     }
 }
