@@ -2696,6 +2696,8 @@
         });
 
         $(document).ready(function() {
+            var token = window.token || localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+            var userId = window.userId || localStorage.getItem("userId") || 1;
 
             // Fetch Total Users Count
             let branchId = localStorage.getItem('selectedBranchId');

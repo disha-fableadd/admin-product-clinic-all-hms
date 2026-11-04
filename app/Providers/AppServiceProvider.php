@@ -25,6 +25,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (config('database.connections.mysql.host') === 'localhost' || empty(config('database.connections.mysql.host'))) {
+            config(['database.connections.mysql.host' => '127.0.0.1']);
+        }
         View::composer('*', function ($view) {
             try {
                 $branches = Branch::all();

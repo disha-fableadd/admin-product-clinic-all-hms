@@ -1759,20 +1759,21 @@
 
 
 <script>
-    let token = @json(session('access_token'));
-    let userId = @json(session('user_id'));
-    let role = @json(session('role'));
-    let permission = @json(session('permissions'));
-
-    console.log(token);
-    // console.log(userId);
-    // console.log(role);
-    // console.log(permission);
-
-
+    var token = window.token || localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
+    window.token = token;
+    window.apiToken = token;
+    var userId = window.userId || localStorage.getItem('userId') || @json(session('user_id') ?? auth()->id() ?? 1);
+    window.userId = userId;
+    var role = window.role || localStorage.getItem('role') || @json(session('role'));
+    window.role = role;
+    var permission = window.permission || @json(session('permissions'));
+    window.permission = permission;
 
     if (!token || token === "null" || token === null) {
-        window.location.href = "{{ route('login') }}";
+        token = localStorage.getItem('token') || localStorage.getItem('authToken');
+        if (!token || token === "null") {
+            window.location.href = "{{ route('login') }}";
+        }
     }
 
 

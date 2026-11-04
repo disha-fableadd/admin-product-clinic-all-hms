@@ -67,13 +67,21 @@
         var token = localStorage.getItem('token') || localStorage.getItem('authToken') || @json(session('access_token'));
         window.apiToken = token;
         window.token = token;
+        var userId = localStorage.getItem('userId') || @json(session('user_id') ?? auth()->id() ?? 1);
+        window.userId = userId;
+        var role = localStorage.getItem('role') || @json(session('role'));
+        window.role = role;
         if (token && !localStorage.getItem('token')) {
             localStorage.setItem('token', token);
+        }
+        if (userId && !localStorage.getItem('userId')) {
+            localStorage.setItem('userId', userId);
         }
         if (window.jQuery) {
             $.ajaxSetup({
                 headers: {
                     'Authorization': token ? ('Bearer ' + token) : '',
+                    'User-ID': userId ? String(userId) : '',
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 }
             });
