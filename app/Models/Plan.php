@@ -24,6 +24,7 @@ class Plan extends Model
         'sub_branch_id',
         'features',
         'total_amount',
+        'renewal_price',
     ];
 
     protected $casts = [
