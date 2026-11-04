@@ -1160,6 +1160,7 @@
 
     <ul class="nav user-menu float-right d-flex align-items-center h-100">
         @auth
+        @if (tenant_has_module(['My Plan Details', 'Plans', 'Membership']))
         <li class="nav-item me-2 d-flex align-items-center header-plan-item">
             <a href="{{ route('plans.myplan') }}" class="header-current-plan"
                 title="{{ $headerPlanName }} - {{ $headerPlanExpiry ? 'Expires: ' . $headerPlanExpiry : 'View your plan' }}">
@@ -1170,9 +1171,10 @@
                 </span>
             </a>
         </li>
+        @endif
         @endauth
         @auth
-            @if (auth()->user()->role->name === 'Admin')
+            @if (auth()->user()->role->name === 'Admin' && tenant_has_module(['Branch', 'Branches', 'Settings']))
                 <li class="nav-item dropdown has-arrow">
                     <a href="#" id="branchDropdown"
                         class="btn custom-btn dropdown-toggle d-flex align-items-center" data-toggle="dropdown">
@@ -1189,7 +1191,7 @@
                         @endforeach
                     </div>
                 </li>
-            @else
+            @elseif (auth()->user()->role->name !== 'Admin' && tenant_has_module(['Branch', 'Branches', 'Settings']))
                 <li class="nav-item">
                     <a href="#" class="btn custom-btn d-flex align-items-center">
                         <i class="fa-solid fa-building"></i>
@@ -1231,7 +1233,7 @@
             </div>
         </li>
 
-        @if (Setting::getValue('razorpay_status') === 'on')
+        @if (Setting::getValue('razorpay_status') === 'on' && tenant_has_module(['Sale Bill', 'Invoices', 'Accounting']))
             <li class="nav-item header-payment-btn appointments-item">
                 <button class="btn custom-btn appointments" data-toggle="modal" data-target="#razorpay">
                     Generate Payment Link
@@ -1239,7 +1241,7 @@
             </li>
         @endif
 
-        @if (app('hasPermission')(30, 'create'))
+        @if (app('hasPermission')(30, 'create') && tenant_has_module('Daily Register'))
             <li class="nav-item header-register-btn appointments-item">
                 <a href="{{ route('daily_data.create') }}" class="btn custom-btn appointments">
                     <i class="fa-solid fa-plus me-1 mr-1"></i> Daily Register
@@ -1363,7 +1365,7 @@
                     $role = optional($user->role)->name;
                 @endphp
 
-                @if ($role !== 'Patient')
+                @if ($role !== 'Patient' && tenant_has_module('Knowledge Base'))
                     <a class="dropdown-item py-2 d-flex align-items-center {{ request()->routeIs('knowledge.index') ? 'active' : '' }}"
                         href="{{ route('knowledge.index') }}" style="font-size: 16px;">
                         <i class="fas fa-book mr-2"></i>
@@ -1381,7 +1383,7 @@
 
 
                 {{-- Branch link --}}
-                @if ($role == 'Admin')
+                @if ($role == 'Admin' && tenant_has_module(['Branch', 'Branches', 'Settings']))
                     <a class="dropdown-item py-2 d-flex align-items-center {{ request()->routeIs('branch.index') ? 'active' : '' }}"
                         href="{{ route('branch.index') }}" style="font-size: 16px;">
                         <i class="fa-solid fa-building mr-2"></i>
@@ -1389,7 +1391,7 @@
                     </a>
                 @endif
 
-                @if (auth()->user()->role->name === 'Admin')
+                @if (auth()->user()->role->name === 'Admin' && tenant_has_module('Settings'))
                     <a class="dropdown-item py-2 d-flex align-items-center {{ request()->routeIs('sms.template') ? 'active' : '' }}"
                         href="{{ route('sms.template') }}" style="font-size: 16px;">
                         <i class="fas fa-cogs icons mr-2"></i></i>

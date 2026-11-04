@@ -39,6 +39,13 @@ class ModuleController extends Controller
             $modules = Modules::all(); 
         }
 
+        // Only return modules permitted for current tenant
+        if (config('tenant.enabled') && function_exists('tenant_has_module')) {
+            $modules = $modules->filter(function ($mod) {
+                return tenant_has_module($mod->name);
+            })->values();
+        }
+
         return response()->json($modules);  
     }
     
