@@ -28,37 +28,37 @@
 
             @php
                 $userRole = optional(Auth::user()->role)->name;
-                use App\Models\Setting;
+                
                 $tenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
 
-                $customClinicLogo = Setting::where('key', 'clinic_logo')->value('value');
+                $customClinicLogo = \App\Models\Setting::where('key', 'clinic_logo')->value('value');
                 $clinicLogo = ($customClinicLogo && file_exists(public_path($customClinicLogo)))
                     ? asset($customClinicLogo)
                     : asset('admin/assets/img/Fablead_HMS_4K.png');
 
                 $clinicName = !empty($tenant['brand_name']) ? $tenant['brand_name'] :
                     (!empty($tenant['client_name']) ? $tenant['client_name'] :
-                    (Setting::where('key', 'clinic_name')->value('value') ?: 'Fablead-HMS'));
+                    (\App\Models\Setting::where('key', 'clinic_name')->value('value') ?: 'Fablead-HMS'));
 
                 $email = !empty($tenant['email']) ? $tenant['email'] :
-                    (Setting::where('key', 'clinic_email')->value('value') ?: (Auth::user()->email ?? 'fableadHMS@gmail.com'));
+                    (\App\Models\Setting::where('key', 'clinic_email')->value('value') ?: (Auth::user()->email ?? 'fableadHMS@gmail.com'));
 
                 $phone = !empty($tenant['phone']) ? $tenant['phone'] :
                     (!empty($tenant['mobile']) ? $tenant['mobile'] :
-                    (Setting::where('key', 'clinic_phone')->value('value') ?: (Auth::user()->phone ?? '5236012032')));
+                    (\App\Models\Setting::where('key', 'clinic_phone')->value('value') ?: (Auth::user()->phone ?? '5236012032')));
 
-                $address = Setting::where('key', 'clinic_address')->value('value') ?:
+                $address = \App\Models\Setting::where('key', 'clinic_address')->value('value') ?:
                     (!empty($tenant['address']) ? $tenant['address'] : (!empty($tenant['location']) ? $tenant['location'] : 'main st'));
 
                 $city = !empty($tenant['city']) ? $tenant['city'] :
                     (!empty($tenant['location']) ? $tenant['location'] :
-                    (Setting::where('key', 'clinic_city')->value('value') ?: 'surat'));
+                    (\App\Models\Setting::where('key', 'clinic_city')->value('value') ?: 'surat'));
 
-                $state = Setting::where('key', 'clinic_state')->value('value') ?:
+                $state = \App\Models\Setting::where('key', 'clinic_state')->value('value') ?:
                     (!empty($tenant['state']) ? $tenant['state'] : 'Gujarat');
-                $tax = Setting::where('key', 'tax_name')->value('value') ?? 'Tax';
-                $type = Setting::where('key', 'tax_type')->value('value') ?? 'Type';
-                $value = Setting::where('key', 'value')->value('value') ?? '0';
+                $tax = \App\Models\Setting::where('key', 'tax_name')->value('value') ?? 'Tax';
+                $type = \App\Models\Setting::where('key', 'tax_type')->value('value') ?? 'Type';
+                $value = \App\Models\Setting::where('key', 'value')->value('value') ?? '0';
             @endphp
 
             @if ($userRole !== 'Patient')

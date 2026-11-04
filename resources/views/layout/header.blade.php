@@ -1113,7 +1113,6 @@
 
         <a href="{{ route('dashboard') }}" class="logo">
             @php
-                use App\Models\Setting;
                 $hdrTenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
                 $customLogo = Setting::where('key', 'clinic_logo')->value('value');
                 $clinicLogo = ($customLogo && file_exists(public_path($customLogo)))

@@ -174,12 +174,19 @@ class PlanController extends Controller
         $paymentHistory = [];
 
         // Fetch official transactions/payments from Super Admin for this client
-        if ($clientId) {
+        $historyClientId = $clientId ?? ($tenant['client_id'] ?? ($tenant['id'] ?? null));
+        $historyEmail = $tenant['email'] ?? ($user->email ?? null);
+        $historyDomain = $tenant['domain'] ?? request()->getHost();
+
+        if ($historyClientId || $historyEmail || $historyDomain) {
             try {
                 $resp = Http::timeout(6)->withHeaders([
                     'X-Tenant-Secret' => config('tenant.secret'),
                 ])->post("{$superAdminBase}/api/tenant/billing-history", [
-                    'client_id' => $clientId,
+                    'client_id' => $historyClientId,
+                    'tenant_id' => $tenant['id'] ?? null,
+                    'email' => $historyEmail,
+                    'domain' => $historyDomain,
                 ]);
 
                 if ($resp->successful() && !empty($resp->json('data'))) {
@@ -257,8 +264,19 @@ class PlanController extends Controller
             'billing_cycle' => 'nullable|string',
         ]);
 
-        $tenant = function_exists('tenant') ? tenant() : null;
-        $clientId = $tenant['client_id'] ?? ($tenant['id'] ?? null);
+        $tenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
+        $user = auth()->user();
+        if (!$tenant && $user && !empty($user->email)) {
+            try {
+                $tenant = app(\App\Services\Tenancy\TenantManager::class)->resolveByEmail($user->email);
+            } catch (\Throwable) {}
+        }
+        if (!$tenant) {
+            try {
+                $tenant = app(\App\Services\Tenancy\TenantManager::class)->resolveByHost($request->getHost());
+            } catch (\Throwable) {}
+        }
+        $clientId = $request->input('client_id') ?? ($tenant['client_id'] ?? ($tenant['id'] ?? null));
         $apiUrl = config('tenant.api_url');
         $superAdminBase = preg_replace('#/api/tenant/?$#i', '', $apiUrl);
 
@@ -318,8 +336,19 @@ class PlanController extends Controller
             'billing_cycle' => 'nullable|string',
         ]);
 
-        $tenant = function_exists('tenant') ? tenant() : null;
-        $clientId = $tenant['client_id'] ?? ($tenant['id'] ?? null);
+        $tenant = function_exists('tenant') ? tenant() : (session('tenant') ?? null);
+        $user = auth()->user();
+        if (!$tenant && $user && !empty($user->email)) {
+            try {
+                $tenant = app(\App\Services\Tenancy\TenantManager::class)->resolveByEmail($user->email);
+            } catch (\Throwable) {}
+        }
+        if (!$tenant) {
+            try {
+                $tenant = app(\App\Services\Tenancy\TenantManager::class)->resolveByHost($request->getHost());
+            } catch (\Throwable) {}
+        }
+        $clientId = $request->input('client_id') ?? ($tenant['client_id'] ?? ($tenant['id'] ?? null));
         $apiUrl = config('tenant.api_url');
         $superAdminBase = preg_replace('#/api/tenant/?$#i', '', $apiUrl);
 
@@ -329,6 +358,7 @@ class PlanController extends Controller
                 'razorpay_payment_id' => $validated['razorpay_payment_id'],
                 'razorpay_signature' => $validated['razorpay_signature'],
                 'client_id' => $clientId,
+                'email' => $tenant['email'] ?? ($user->email ?? null),
                 'payment_type' => $validated['payment_type'],
                 'amount' => $validated['amount'],
                 'billing_cycle' => $validated['billing_cycle'] ?? null,
@@ -494,7 +524,10 @@ class PlanController extends Controller
                 $txResp = Http::timeout(5)->withHeaders([
                     'X-Tenant-Secret' => config('tenant.secret'),
                 ])->post("{$superAdminBase}/api/tenant/billing-history", [
-                    'client_id' => $clientId,
+                    'client_id' => $historyClientId,
+                    'tenant_id' => $tenant['id'] ?? null,
+                    'email' => $historyEmail,
+                    'domain' => $historyDomain,
                     'transaction_id' => $transactionId,
                 ]);
 

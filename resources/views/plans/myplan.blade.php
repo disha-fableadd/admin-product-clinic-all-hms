@@ -591,6 +591,9 @@
             body: JSON.stringify({
                 amount: currentRenewalPrice,
                 payment_type: 'renewal',
+                client_id: {{ json_encode($tenant['client_id'] ?? ($tenant['id'] ?? null)) }},
+                email: {{ json_encode($tenant['email'] ?? (auth()->user()->email ?? '')) }},
+                name: {{ json_encode($tenant['client_name'] ?? ($tenant['brand_name'] ?? (auth()->user()->fullname ?? ''))) }},
                 description: 'Plan Renewal: {{ addslashes($plan->name ?? "Subscription") }}'
             })
         })
@@ -630,7 +633,9 @@
                         razorpay_signature: response.razorpay_signature,
                         payment_type: 'renewal',
                         amount: currentRenewalPrice,
-                        billing_cycle: currentBillingDuration
+                        billing_cycle: currentBillingDuration,
+                        client_id: {{ json_encode($tenant['client_id'] ?? ($tenant['id'] ?? null)) }},
+                        email: {{ json_encode($tenant['email'] ?? (auth()->user()->email ?? '')) }}
                     });
                 }
             };
