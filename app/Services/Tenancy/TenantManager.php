@@ -289,23 +289,16 @@ class TenantManager
         $connection = config('database.default', 'mysql');
 
         // Baseline working database credentials from environment
-        $defaultHost = config("database.connections.{$connection}.host") ?: env('DB_HOST', '127.0.0.1');
-        if ($defaultHost === 'localhost') {
-            $defaultHost = '127.0.0.1';
-        }
+        $defaultHost = config("database.connections.{$connection}.host") ?: env('DB_HOST', 'localhost');
         $defaultPort = (int) (config("database.connections.{$connection}.port") ?: env('DB_PORT', 3306));
         $defaultUsername = config("database.connections.{$connection}.username") ?: env('DB_USERNAME', 'root');
         $defaultPassword = (string) (config("database.connections.{$connection}.password") ?? env('DB_PASSWORD', ''));
         $defaultDatabase = config("database.connections.{$connection}.database") ?: env('DB_DATABASE', '');
 
-        // Determine target host: avoid 'localhost' on Linux as it forces unix domain socket which is blocked on shared hosting
-        $dbHost = $db['host'] ?? $defaultHost;
-        if ($dbHost === 'localhost' || empty($dbHost)) {
-            $dbHost = ($defaultHost !== 'localhost' && !empty($defaultHost)) ? $defaultHost : '127.0.0.1';
-        }
+        $dbHost = !empty($db['host']) ? $db['host'] : $defaultHost;
         $dbPort = (int) ($db['port'] ?? $defaultPort);
 
-        $dbUsername = $db['username'] ?? $defaultUsername;
+        $dbUsername = !empty($db['username']) ? $db['username'] : $defaultUsername;
         $dbPassword = (string) ($db['password'] ?? $defaultPassword);
         $databaseName = $db['database'];
 
@@ -316,32 +309,47 @@ class TenantManager
             $dbHost = $defaultHost;
         }
 
-        // Test connecting with PDO
+        // Test connecting with PDO: try target host, and if Operation not permitted (2002), try alternate (localhost <-> 127.0.0.1)
         $pdo = null;
         if (!empty($dbUsername)) {
-            try {
-                $pdo = new \PDO("mysql:host={$dbHost};port={$dbPort}", $dbUsername, $dbPassword, [
-                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
-                    \PDO::ATTR_TIMEOUT => 2,
-                ]);
-            } catch (\Throwable) {
-                $pdo = null;
+            $hostsToTry = array_unique([$dbHost, 'localhost', '127.0.0.1']);
+            foreach ($hostsToTry as $tryHost) {
+                try {
+                    $dsn = ($tryHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$tryHost};port={$dbPort}";
+                    $pdo = new \PDO($dsn, $dbUsername, $dbPassword, [
+                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
+                        \PDO::ATTR_TIMEOUT => 2,
+                    ]);
+                    if ($pdo) {
+                        $dbHost = $tryHost;
+                        break;
+                    }
+                } catch (\Throwable) {
+                    $pdo = null;
+                }
             }
         }
 
         // If tenant specific credentials cannot connect, fallback to environment default credentials
         if (!$pdo) {
-            $dbHost = $defaultHost;
-            $dbPort = $defaultPort;
-            $dbUsername = $defaultUsername;
-            $dbPassword = $defaultPassword;
-            try {
-                $pdo = new \PDO("mysql:host={$defaultHost};port={$defaultPort}", $defaultUsername, $defaultPassword, [
-                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
-                    \PDO::ATTR_TIMEOUT => 2,
-                ]);
-            } catch (\Throwable) {
-                $pdo = null;
+            $hostsToTry = array_unique([$defaultHost, 'localhost', '127.0.0.1']);
+            foreach ($hostsToTry as $tryHost) {
+                try {
+                    $dsn = ($tryHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$tryHost};port={$defaultPort}";
+                    $pdo = new \PDO($dsn, $defaultUsername, $defaultPassword, [
+                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
+                        \PDO::ATTR_TIMEOUT => 2,
+                    ]);
+                    if ($pdo) {
+                        $dbHost = $tryHost;
+                        $dbPort = $defaultPort;
+                        $dbUsername = $defaultUsername;
+                        $dbPassword = $defaultPassword;
+                        break;
+                    }
+                } catch (\Throwable) {
+                    $pdo = null;
+                }
             }
         }
 

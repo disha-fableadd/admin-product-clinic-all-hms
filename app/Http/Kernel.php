@@ -43,9 +43,9 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EncryptCookies::class,
             \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
             \Illuminate\Session\Middleware\StartSession::class,
+            \App\Http\Middleware\IdentifyTenant::class,
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
-            \App\Http\Middleware\IdentifyTenant::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];
