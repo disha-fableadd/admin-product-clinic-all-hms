@@ -964,4 +964,21 @@ class PurchaseController extends Controller
             'message' => 'Bank account added successfully.'
         ]);
     }
+
+    public function purchase_report(\Illuminate\Http\Request $request)
+    {
+        $branchId = session('selectedBranchId') ?? optional(\Illuminate\Support\Facades\Auth::user())->branch_id ?? null;
+
+        $vendorsQuery = \App\Models\Supplier::query();
+        if ($branchId) {
+            $vendorsQuery->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+        }
+        $vendors = $vendorsQuery->orderBy('name', 'asc')->get();
+
+        $categories = \App\Models\Category::where('isDeleted', 0)->orderBy('name', 'asc')->get();
+
+        return view('purchase.purchasereport', compact('vendors', 'categories'));
+    }
 }

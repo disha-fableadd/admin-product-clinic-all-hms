@@ -50,6 +50,10 @@ class PlanPermissionSyncService
             ['id' => 34, 'name' => 'Machine'],
             ['id' => 35, 'name' => 'Tax Rate'],
             ['id' => 36, 'name' => 'Referal Doctor'],
+            ['id' => 37, 'name' => 'Sales Report'],
+            ['id' => 38, 'name' => 'Purchase Report'],
+            ['id' => 39, 'name' => 'Expense Report'],
+            ['id' => 40, 'name' => 'Analytics & Summary'],
         ];
     }
 
@@ -95,6 +99,10 @@ class PlanPermissionSyncService
             34 => ['machine', 'diet chart', 'diet charts', 'treatments'],
             35 => ['tax rate', 'tax rates', 'tax'],
             36 => ['referal doctor', 'referral doctor', 'patients'],
+            37 => ['sales report', 'sales-report', 'sales reports'],
+            38 => ['purchase report', 'purchase-report', 'purchase reports'],
+            39 => ['expense report', 'expense-report', 'expense reports', 'expenses report'],
+            40 => ['analytics & summary', 'analytics', 'charts', 'chart'],
         ];
     }
 

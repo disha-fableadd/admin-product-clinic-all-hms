@@ -485,5 +485,114 @@ class SalesController extends Controller
             return response()->json(['status' => false, 'message' => 'Error: ' . $e->getMessage()], 500);
         }
     }
-}
 
+    public function orderReport(\Illuminate\Http\Request $request)
+    {
+        $user = auth('sanctum')->user() ?? auth('web')->user() ?? auth()->user();
+        $branchId = $request->input('selectedBranchId') ?? $request->input('selectedSubAdminId') ?? ($request->branch_id ?? session('selectedBranchId') ?? optional($user)->branch_id);
+
+        $filter = $request->query('filter');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $customerId = $request->query('customer_id') ?: $request->query('patient_id');
+        $categoryId = $request->query('category_id');
+
+        $query = OrderItem::with(['product.category', 'product.brand', 'order'])
+            ->where('isDeleted', 0)
+            ->whereHas('order', function ($q) use ($filter, $month, $year, $customerId, $branchId) {
+                $q->where('isDeleted', 0);
+
+                if ($branchId) {
+                    $q->where(function($b) use ($branchId) {
+                        $b->where('branch_id', $branchId)->orWhereNull('branch_id');
+                    });
+                }
+
+                if ($filter) {
+                    $today = \Carbon\Carbon::today();
+                    switch ($filter) {
+                        case 'this_week':
+                            $q->whereBetween('created_at', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()]);
+                            break;
+                        case 'this_month':
+                            $q->whereMonth('created_at', $today->month)->whereYear('created_at', $today->year);
+                            break;
+                        case 'last_6_months':
+                            $q->whereBetween('created_at', [\Carbon\Carbon::now()->subMonths(6), \Carbon\Carbon::now()]);
+                            break;
+                        case 'this_year':
+                            $q->whereYear('created_at', $today->year);
+                            break;
+                        case 'previous_year':
+                            $q->whereYear('created_at', \Carbon\Carbon::now()->subYear()->year);
+                            break;
+                    }
+                }
+
+                if ($month) {
+                    $q->whereMonth('created_at', $month);
+                }
+
+                if ($year) {
+                    $q->whereYear('created_at', $year);
+                }
+
+                if ($customerId) {
+                    $q->where('user_id', $customerId);
+                }
+            });
+
+        if ($categoryId) {
+            $query->whereHas('product', function ($p) use ($categoryId) {
+                $p->where('category_id', $categoryId);
+            });
+        }
+
+        $items = $query->get();
+        $grandTotal = 0;
+
+        $orderItems = $items->map(function ($item) use (&$grandTotal) {
+            $product = $item->product;
+            $soldQty = (float) ($item->quantity ?? 1);
+            $soldAmount = (float) ($item->price ? ($item->price * $soldQty) : ($item->total_amount ?? 0));
+            $grandTotal += $soldAmount;
+
+            $image = 'admin/assets/img/product/noimage.png';
+            if ($product && !empty($product->image)) {
+                $image = $product->image;
+            }
+
+            return [
+                'id' => $item->id,
+                'order_id' => $item->order_id,
+                'product_id' => $product->id ?? $item->product_id,
+                'name' => $product->name ?? $item->custom_product_name ?? ('Medicine #' . $item->product_id),
+                'SKU' => $product->barcode ?? $product->hsn_code ?? ('MED-' . ($item->product_id ?? $item->id)),
+                'category' => $product->category->name ?? 'Pharmacy',
+                'brand' => $product->brand->name ?? 'N/A',
+                'sold_qty' => $soldQty,
+                'sold_amount' => number_format($soldAmount, 2),
+                'image' => $image,
+                'image_url' => asset($image),
+            ];
+        });
+
+        $chartMap = [];
+        foreach ($orderItems as $row) {
+            $name = $row['name'];
+            $amt = (float) str_replace(',', '', $row['sold_amount']);
+            $chartMap[$name] = ($chartMap[$name] ?? 0) + $amt;
+        }
+        arsort($chartMap);
+        $topLabels = array_slice(array_keys($chartMap), 0, 10);
+        $topTotals = array_slice(array_values($chartMap), 0, 10);
+
+        return response()->json([
+            'status' => true,
+            'data' => $orderItems,
+            'labels' => $topLabels,
+            'totals' => $topTotals,
+            'grand_total' => $grandTotal,
+        ]);
+    }
+}

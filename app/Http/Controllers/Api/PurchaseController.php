@@ -328,5 +328,121 @@ class PurchaseController extends Controller
             ], 500);
         }
     }
-}
 
+    public function fetch_purchase_report(\Illuminate\Http\Request $request)
+    {
+        $user = auth('sanctum')->user() ?? auth('web')->user() ?? auth()->user();
+        $branchId = $request->input('selectedBranchId') ?? $request->input('selectedSubAdminId') ?? ($request->branch_id ?? session('selectedBranchId') ?? optional($user)->branch_id);
+
+        $filter = $request->query('filter');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $vendorId = $request->query('vendor_id');
+        $categoryId = $request->query('category_id');
+
+        $query = Purchases::with(['medicine.category', 'medicine.brand', 'vendor', 'invoice'])
+            ->where('isDeleted', 0);
+
+        if ($branchId) {
+            $query->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+        }
+
+        if ($vendorId) {
+            $query->where('vendor_id', $vendorId);
+        }
+
+        if ($categoryId) {
+            $query->whereHas('medicine', function ($m) use ($categoryId) {
+                $m->where('category_id', $categoryId);
+            });
+        }
+
+        if ($filter) {
+            $today = \Carbon\Carbon::today();
+            switch ($filter) {
+                case 'this_week':
+                    $query->whereBetween('created_at', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()]);
+                    break;
+                case 'this_month':
+                    $query->whereMonth('created_at', $today->month)->whereYear('created_at', $today->year);
+                    break;
+                case 'last_6_months':
+                    $query->whereBetween('created_at', [\Carbon\Carbon::now()->subMonths(6), \Carbon\Carbon::now()]);
+                    break;
+                case 'this_year':
+                    $query->whereYear('created_at', $today->year);
+                    break;
+                case 'previous_year':
+                    $query->whereYear('created_at', \Carbon\Carbon::now()->subYear()->year);
+                    break;
+            }
+        }
+
+        if ($month) {
+            $query->whereMonth('created_at', $month);
+        }
+        if ($year) {
+            $query->whereYear('created_at', $year);
+        }
+
+        $items = $query->orderBy('id', 'desc')->get();
+        $grandTotal = 0;
+
+        $reportData = $items->map(function ($item) use (&$grandTotal) {
+            $med = $item->medicine;
+            $vendor = $item->vendor;
+            $qty = (float) ($item->quantity ?? 1);
+            $amount = (float) ($item->amount_total ?: (($item->price ?: 0) * $qty));
+            $grandTotal += $amount;
+
+            return [
+                'id' => $item->id,
+                'invoice_id' => $item->invoice_id,
+                'name' => $med->name ?? ('Item #' . $item->item),
+                'product_name' => $med->name ?? ('Item #' . $item->item),
+                'vendor_name' => $vendor->name ?? 'N/A',
+                'vendor' => [
+                    'id' => $vendor->id ?? null,
+                    'name' => $vendor->name ?? 'N/A',
+                ],
+                'amount_total' => $amount,
+                'quantity' => $qty,
+                'quantity_type' => $item->scheme_free_qty ? ($item->scheme_free_qty . ' Free') : ($med->unit ?? 'Unit'),
+                'date' => $item->purchase_date ?: ($item->created_at ? $item->created_at->format('Y-m-d') : ''),
+                'image' => $med->image ?? 'admin/assets/img/product/noimage.png',
+            ];
+        });
+
+        return response()->json([
+            'status' => true,
+            'data' => $reportData,
+            'grand_total' => $grandTotal,
+        ]);
+    }
+
+    public function purchaseProductChart(\Illuminate\Http\Request $request)
+    {
+        $res = $this->fetch_purchase_report($request);
+        $data = $res->getData(true);
+
+        $chartMap = [];
+        if (!empty($data['data'])) {
+            foreach ($data['data'] as $item) {
+                $name = $item['product_name'] ?? $item['name'];
+                $chartMap[$name] = ($chartMap[$name] ?? 0) + (float) $item['amount_total'];
+            }
+        }
+        arsort($chartMap);
+        $labels = array_slice(array_keys($chartMap), 0, 10);
+        $totals = array_slice(array_values($chartMap), 0, 10);
+
+        return response()->json([
+            'status' => true,
+            'labels' => $labels,
+            'totals' => $totals,
+            'grand_total' => $data['grand_total'] ?? 0,
+        ]);
+    }
+}
