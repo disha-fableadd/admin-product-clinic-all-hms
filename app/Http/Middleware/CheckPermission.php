@@ -29,7 +29,7 @@ class CheckPermission
         $normalizedRouteName = $routeName ? strtolower($routeName) : null;
 
         // 1. Enforce tenant module restrictions across ALL roles (including admin)
-        if (config('tenant.enabled') && function_exists('tenant_has_module')) {
+        if (function_exists('tenant_has_module')) {
             $requiredTenantModule = \App\Services\ModuleAccessService::resolveRequiredModule($request, $normalizedRouteName);
             if ($requiredTenantModule !== null && ! tenant_has_module($requiredTenantModule)) {
                 if ($request->expectsJson() || $request->ajax()) {

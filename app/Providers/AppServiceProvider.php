@@ -106,25 +106,9 @@ class AppServiceProvider extends ServiceProvider
                     40 => 'Analytics & Summary',
                 ];
 
-                // If tenancy is active, enforce plan module restrictions for ALL users (including Admin)
+                // Strictly enforce plan module restrictions for ALL users (including Admin)
                 if (function_exists('tenant_has_module')) {
-                    if ($moduleId === 1) {
-                        if (!tenant_has_module('Medicines') && !tenant_has_module('Dashboard')) {
-                            return false;
-                        }
-                    } elseif ($moduleId === 4) {
-                        if (!tenant_has_module('Settings') && !tenant_has_module('Medicines')) {
-                            return false;
-                        }
-                    } elseif ($moduleId === 21) {
-                        if (!tenant_has_module('Purchase Bill') && !tenant_has_module('Tax Rates') && !tenant_has_module('Diagnostic Service')) {
-                            return false;
-                        }
-                    } elseif ($moduleId === 35) {
-                        if (!tenant_has_module('Patients') && !tenant_has_module('Tax Rates')) {
-                            return false;
-                        }
-                    } elseif (isset($idToNameMap[$moduleId]) && !tenant_has_module($idToNameMap[$moduleId])) {
+                    if (isset($idToNameMap[$moduleId]) && !tenant_has_module($idToNameMap[$moduleId])) {
                         return false;
                     }
                 }
@@ -134,7 +118,26 @@ class AppServiceProvider extends ServiceProvider
                     return false;
                 }
 
-                // Admins have full access to tenant-permitted modules
+                // Check user_permissions table: if permissions exist for this user, strictly enforce them
+                if (\Illuminate\Support\Facades\Schema::hasTable('user_permissions')) {
+                    $hasAnyInDb = \App\Models\UserPermission::where('user_id', $user->id)->exists();
+                    if ($hasAnyInDb) {
+                        $actionNormalized = match(strtolower((string)$action)) {
+                            'add' => 'create',
+                            'edit' => 'update',
+                            default => strtolower((string)$action),
+                        };
+                        return \App\Models\UserPermission::where('user_id', $user->id)
+                            ->where('module_id', $moduleId)
+                            ->where(function($q) use ($actionNormalized, $action) {
+                                $q->where($actionNormalized, 1)
+                                  ->orWhere($action, 1);
+                            })
+                            ->exists();
+                    }
+                }
+
+                // Admins have full access to tenant-permitted modules if table not seeded
                 if ((string)$user->role_id === '2' || (int)$user->role_id === 1) {
                     return true;
                 }
