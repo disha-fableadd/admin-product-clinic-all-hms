@@ -25,14 +25,41 @@ if (! function_exists('tenant_has_module')) {
      */
     function tenant_has_module($moduleNames): bool
     {
-        if (! config('tenant.enabled') || ! tenant()) {
-            return true;
+        $assigned = [];
+        if (function_exists('tenant') && tenant()) {
+            $assigned = (array) tenant('modules', []);
         }
 
-        $assigned = (array) tenant('modules', []);
+        // If not in tenant session, fallback to active Plan features from database (matching Hotel ERP behavior)
+        if (empty($assigned)) {
+            try {
+                $dbPlanFeatures = null;
+                $user = auth()->user();
+                if ($user && method_exists($user, 'getActivePlan')) {
+                    $p = $user->getActivePlan();
+                    if ($p && !empty($p->features)) {
+                        $dbPlanFeatures = $p->features;
+                    }
+                }
+                if (!$dbPlanFeatures) {
+                    $activePlan = \App\Models\Plan::where('is_active', 1)->latest('id')->first()
+                        ?: \App\Models\Plan::latest('id')->first();
+                    if ($activePlan && !empty($activePlan->features)) {
+                        $dbPlanFeatures = $activePlan->features;
+                    }
+                }
+                if (!empty($dbPlanFeatures)) {
+                    $assigned = is_array($dbPlanFeatures) ? $dbPlanFeatures : (json_decode($dbPlanFeatures, true) ?: []);
+                }
+                if (empty($assigned) && \Illuminate\Support\Facades\Schema::hasTable('modules')) {
+                    $nameCol = \Illuminate\Support\Facades\Schema::hasColumn('modules', 'name') ? 'name' : 'module';
+                    $assigned = \Illuminate\Support\Facades\DB::table('modules')->pluck($nameCol)->all();
+                }
+            } catch (\Throwable $e) {}
+        }
 
         if (empty($assigned)) {
-            return false;
+            return !config('tenant.enabled');
         }
 
         $assignedNormalized = array_map(function ($m) {

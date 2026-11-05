@@ -302,6 +302,39 @@ class TenantManager
         $dbPassword = (string) ($db['password'] ?? $defaultPassword);
         $databaseName = $db['database'];
 
+        // Auto-detect unix domain socket on Linux (for Hostinger / cPanel / CloudLinux)
+        $unixSocket = null;
+        if (PHP_OS_FAMILY !== 'Windows') {
+            $possibleSockets = [
+                ini_get('pdo_mysql.default_socket'),
+                ini_get('mysqli.default_socket'),
+                '/var/run/mysqld/mysqld.sock',
+                '/tmp/mysql.sock',
+                '/var/lib/mysql/mysql.sock',
+            ];
+            foreach ($possibleSockets as $sock) {
+                if (!empty($sock) && @file_exists($sock)) {
+                    $unixSocket = $sock;
+                    break;
+                }
+            }
+            if (!$unixSocket && !empty(ini_get('pdo_mysql.default_socket'))) {
+                $unixSocket = ini_get('pdo_mysql.default_socket');
+            }
+        }
+
+        // If tenant password was passed as encrypted ciphertext (e.g. from admin_erp with different key or raw DB value), attempt decryption
+        if (is_string($dbPassword) && (str_starts_with($dbPassword, 'eyJ') || str_contains($dbPassword, '\"iv\"'))) {
+            try {
+                $dbPassword = \Illuminate\Support\Facades\Crypt::decryptString($dbPassword);
+            } catch (\Throwable) {
+                // If local app key cannot decrypt, try old known keys or fallback to environment default password
+                if (!empty($defaultPassword)) {
+                    $dbPassword = $defaultPassword;
+                }
+            }
+        }
+
         // If default environment credentials are non-root (e.g. Hostinger u573967329_xxx) and tenant specifies dummy 'root', use default credentials
         if ($defaultUsername !== 'root' && !empty($defaultUsername) && ($dbUsername === 'root' || empty($dbUsername))) {
             $dbUsername = $defaultUsername;
@@ -312,16 +345,24 @@ class TenantManager
         // Test connecting with PDO: try target host, and if Operation not permitted (2002), try alternate (localhost <-> 127.0.0.1)
         $pdo = null;
         if (!empty($dbUsername)) {
-            $hostsToTry = array_unique([$dbHost, 'localhost', '127.0.0.1']);
-            foreach ($hostsToTry as $tryHost) {
+            $candidateDsns = [];
+            if (PHP_OS_FAMILY !== 'Windows') {
+                if ($unixSocket) {
+                    $candidateDsns[] = "mysql:unix_socket={$unixSocket}";
+                }
+                $candidateDsns[] = "mysql:host=localhost";
+            } else {
+                $candidateDsns[] = ($dbHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$dbHost};port={$dbPort}";
+                $candidateDsns[] = "mysql:host=127.0.0.1;port={$dbPort}";
+            }
+
+            foreach ($candidateDsns as $dsn) {
                 try {
-                    $dsn = ($tryHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$tryHost};port={$dbPort}";
                     $pdo = new \PDO($dsn, $dbUsername, $dbPassword, [
                         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
                         \PDO::ATTR_TIMEOUT => 2,
                     ]);
                     if ($pdo) {
-                        $dbHost = $tryHost;
                         break;
                     }
                 } catch (\Throwable) {
@@ -332,16 +373,25 @@ class TenantManager
 
         // If tenant specific credentials cannot connect, fallback to environment default credentials
         if (!$pdo) {
-            $hostsToTry = array_unique([$defaultHost, 'localhost', '127.0.0.1']);
-            foreach ($hostsToTry as $tryHost) {
+            $candidateDsns = [];
+            if (PHP_OS_FAMILY !== 'Windows') {
+                if ($unixSocket) {
+                    $candidateDsns[] = "mysql:unix_socket={$unixSocket}";
+                }
+                $candidateDsns[] = "mysql:host=localhost";
+            } else {
+                $candidateDsns[] = ($defaultHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$defaultHost};port={$defaultPort}";
+                $candidateDsns[] = "mysql:host=127.0.0.1;port={$defaultPort}";
+            }
+
+            foreach ($candidateDsns as $dsn) {
                 try {
-                    $dsn = ($tryHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$tryHost};port={$defaultPort}";
                     $pdo = new \PDO($dsn, $defaultUsername, $defaultPassword, [
                         \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
                         \PDO::ATTR_TIMEOUT => 2,
                     ]);
                     if ($pdo) {
-                        $dbHost = $tryHost;
+                        $dbHost = $defaultHost;
                         $dbPort = $defaultPort;
                         $dbUsername = $defaultUsername;
                         $dbPassword = $defaultPassword;
@@ -395,12 +445,17 @@ class TenantManager
             }
         }
 
+        $isLinuxLocal = (PHP_OS_FAMILY !== 'Windows' && in_array($dbHost, ['localhost', '127.0.0.1', '']));
+        $finalPort = $isLinuxLocal ? null : $dbPort;
+        $finalHost = $isLinuxLocal ? 'localhost' : $dbHost;
+
         config([
-            "database.connections.{$connection}.host" => $dbHost,
-            "database.connections.{$connection}.port" => $dbPort,
+            "database.connections.{$connection}.host" => $finalHost,
+            "database.connections.{$connection}.port" => $finalPort,
             "database.connections.{$connection}.database" => $databaseName,
             "database.connections.{$connection}.username" => $dbUsername,
             "database.connections.{$connection}.password" => $dbPassword,
+            "database.connections.{$connection}.unix_socket" => $unixSocket ?: '',
         ]);
         DB::purge($connection);
 

@@ -39,6 +39,36 @@ class Plan extends Model
         'features' => 'array',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($plan) {
+            if (!empty($plan->duration) && !is_numeric($plan->duration)) {
+                $valStr = strtolower(trim((string)$plan->duration));
+                try {
+                    $colType = \Illuminate\Support\Facades\Schema::getColumnType($plan->getTable(), 'duration');
+                    if (in_array(strtolower($colType), ['integer', 'int', 'bigint', 'smallint', 'tinyint'], true)) {
+                        $plan->attributes['duration'] = str_contains($valStr, 'month') ? 1 : 12;
+                    }
+                } catch (\Throwable) {}
+            }
+        });
+    }
+
+    public function setDurationAttribute($value)
+    {
+        if (!is_numeric($value) && !empty($value)) {
+            $valStr = strtolower(trim((string)$value));
+            try {
+                $colType = \Illuminate\Support\Facades\Schema::getColumnType($this->getTable(), 'duration');
+                if (in_array(strtolower($colType), ['integer', 'int', 'bigint', 'smallint', 'tinyint'], true)) {
+                    $this->attributes['duration'] = str_contains($valStr, 'month') ? 1 : 12;
+                    return;
+                }
+            } catch (\Throwable) {}
+        }
+        $this->attributes['duration'] = $value;
+    }
+
     /**
      * Calculate duration in months and days between start_date and end_date
      * @return float Duration in months (decimal format)
