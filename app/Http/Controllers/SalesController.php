@@ -305,7 +305,7 @@ class SalesController extends Controller
     {
         $branchId = session('selectedBranchId') ?? optional(\Illuminate\Support\Facades\Auth::user())->branch_id ?? null;
 
-        $patientsQuery = \App\Models\Patients::where('isDeleted', 0);
+        $patientsQuery = \App\Models\Patients::query();
         if ($branchId) {
             $patientsQuery->where(function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId)->orWhereNull('branch_id');
@@ -314,7 +314,7 @@ class SalesController extends Controller
         $patients = $patientsQuery->orderBy('fullname', 'asc')->get();
         $customers = $patients;
 
-        $categories = \App\Models\Category::where('isDeleted', 0)->orderBy('name', 'asc')->get();
+        $categories = \App\Models\Category::query()->get()->sortBy(function($c) { return strtolower($c->name ?? ''); })->values();
 
         return view('sales.salesreport', compact('customers', 'patients', 'categories'));
     }

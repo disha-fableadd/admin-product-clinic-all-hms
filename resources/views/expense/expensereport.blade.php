@@ -4,6 +4,96 @@
 
 @section('content')
 <style>
+    :root {
+        --theme-orange: #f89884;
+        --theme-orange-dark: #ea7a63;
+        --theme-navy: #002e5b;
+        --theme-mint: #cfece0;
+        --theme-dark: #1e293b;
+    }
+
+    /* Clinic Theme Card & Table Header */
+    .card {
+        border: none !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+        background: #ffffff !important;
+    }
+
+    table.datanew thead tr th, table thead tr th {
+        background-color: #f89884 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        padding: 12px 14px !important;
+        border: none !important;
+        vertical-align: middle !important;
+    }
+    table.datanew thead tr th:first-child {
+        border-top-left-radius: 12px !important;
+    }
+    table.datanew thead tr th:last-child {
+        border-top-right-radius: 12px !important;
+    }
+
+    /* Filters (Pill design matching other clinic pages) */
+    .search-set select, .search-set .form-select {
+        height: 38px !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 50px !important;
+        padding: 6px 18px !important;
+        font-size: 13px !important;
+        color: #1e293b !important;
+        outline: none !important;
+        transition: all 0.2s ease !important;
+    }
+    .search-set select:focus, .search-set .form-select:focus {
+        border-color: #f89884 !important;
+        box-shadow: 0 0 0 2px rgba(248, 152, 132, 0.25) !important;
+    }
+
+    /* Total Summary Pill */
+    .total_expense, #total-expense-amount {
+        background: #fff5f2 !important;
+        border: 1.5px solid #f89884 !important;
+        color: #d9534f !important;
+        border-radius: 50px !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        padding: 6px 18px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+
+    /* Buttons */
+    #generate-pdf, #generate-pdf button, .wordset .btn, .btn-primary {
+        background-color: #f89884 !important;
+        border-color: #f89884 !important;
+        border-radius: 50px !important;
+        font-weight: 600 !important;
+        color: #ffffff !important;
+        padding: 7px 20px !important;
+        transition: all 0.2s ease !important;
+    }
+    #generate-pdf:hover, #generate-pdf button:hover, .wordset .btn:hover, .btn-primary:hover {
+        background-color: #f67e65 !important;
+        border-color: #f67e65 !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* Hover Rows */
+    table.datanew tbody tr:hover td {
+        background-color: #fff9f8 !important;
+    }
+
+    /* Pagination */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+        background: #f89884 !important;
+        border-color: #f89884 !important;
+        color: #ffffff !important;
+        border-radius: 50px !important;
+    }
     .expense-chart-wrapper {
         position: relative;
         /* 🔑 KEY FIX */
@@ -563,7 +653,7 @@
                             // Column 2: Expense Name with collapsible details
                             `<div>
                                     <div style="display: flex; align-items: center;">
-                                        <a href="{{ route('expense.list') }}" class="d-flex align-items-center" style="text-decoration: none; color: inherit;">
+                                        <a href="{{ Route::has('expense.index') ? route('expense.index') : url('/expenses') }}" class="d-flex align-items-center" style="text-decoration: none; color: inherit;">
                                             <span class="expense-name truncated">${expense.expense_name ?? 'N/A'}</span>
                                         </a>
                                     </div>
