@@ -20,7 +20,7 @@
     );
 
     $isReportsActive = request()->routeIs(
-        'chart', 'sales.report', 'purchase.report', 'expense.report'
+        'chart', 'sales.report', 'purchase.report', 'expense.report') || request()->is('chart*', 'sales-report*', 'purchase-report*', 'expense-report*'
     );
 
     $isSettingsActive = request()->routeIs(
@@ -1048,33 +1048,33 @@
                         <span class="menu-arrow"></span>
                     </a>
                     <ul style="{{ $isReportsActive ? 'display: block;' : 'display: none;' }}">
-                        @if (tenant_has_module('Sales Report') && Route::has('sales.report'))
-                            <li class="sidebar-module {{ request()->routeIs('sales.report') ? 'active' : '' }}">
-                                <a href="{{ route('sales.report') }}" class="{{ request()->routeIs('sales.report') ? 'active' : '' }}">
+                        @if (tenant_has_module(['Sales Report', 'sales-report', 'Reports', 'Report']))
+                            <li class="sidebar-module {{ request()->routeIs('sales.report') || request()->is('sales-report*') ? 'active' : '' }}">
+                                <a href="{{ Route::has('sales.report') ? route('sales.report') : url('/sales-report') }}" class="{{ request()->routeIs('sales.report') || request()->is('sales-report*') ? 'active' : '' }}">
                                     <i class="fa fa-chart-bar icons"></i>
                                     <span>Sales Report</span>
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module('Purchase Report') && Route::has('purchase.report'))
-                            <li class="sidebar-module {{ request()->routeIs('purchase.report') ? 'active' : '' }}">
-                                <a href="{{ route('purchase.report') }}" class="{{ request()->routeIs('purchase.report') ? 'active' : '' }}">
+                        @if (tenant_has_module(['Purchase Report', 'purchase-report', 'Reports', 'Report']))
+                            <li class="sidebar-module {{ request()->routeIs('purchase.report') || request()->is('purchase-report*') ? 'active' : '' }}">
+                                <a href="{{ Route::has('purchase.report') ? route('purchase.report') : url('/purchase-report') }}" class="{{ request()->routeIs('purchase.report') || request()->is('purchase-report*') ? 'active' : '' }}">
                                     <i class="fa fa-chart-pie icons"></i>
                                     <span>Purchase Report</span>
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module('Expense Report') && Route::has('expense.report'))
-                            <li class="sidebar-module {{ request()->routeIs('expense.report') ? 'active' : '' }}">
-                                <a href="{{ route('expense.report') }}" class="{{ request()->routeIs('expense.report') ? 'active' : '' }}">
+                        @if (tenant_has_module(['Expense Report', 'expense-report', 'Expenses Report', 'Reports', 'Report']))
+                            <li class="sidebar-module {{ request()->routeIs('expense.report') || request()->is('expense-report*') ? 'active' : '' }}">
+                                <a href="{{ Route::has('expense.report') ? route('expense.report') : url('/expense-report') }}" class="{{ request()->routeIs('expense.report') || request()->is('expense-report*') ? 'active' : '' }}">
                                     <i class="fa fa-file-invoice-dollar icons"></i>
                                     <span>Expense Report</span>
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module(['Analytics & Summary', 'Reports', 'Report']) && (app('hasPermission')(32, 'view') || app('hasPermission')(14, 'view')))
-                            <li class="sidebar-module {{ request()->routeIs('chart') ? 'active' : '' }}">
-                                <a href="{{ route('chart') }}" class="{{ request()->routeIs('chart') ? 'active' : '' }}">
+                        @if (tenant_has_module(['Analytics & Summary', 'Reports', 'Report']) && (app('hasPermission')(32, 'view') || app('hasPermission')(40, 'view') || app('hasPermission')(14, 'view') || (auth()->user() && in_array((string)auth()->user()->role_id, ['1', '2']))))
+                            <li class="sidebar-module {{ request()->routeIs('chart') || request()->is('chart*') ? 'active' : '' }}">
+                                <a href="{{ Route::has('chart') ? route('chart') : url('/chart') }}" class="{{ request()->routeIs('chart') || request()->is('chart*') ? 'active' : '' }}">
                                     <i class="fa fa-chart-area icons"></i>
                                     <span>Analytics & Summary</span>
                                 </a>

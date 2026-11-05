@@ -90,4 +90,13 @@ class ExpenseController extends Controller
             'Content-Disposition' => "attachment; filename=$filename",
         ]);
     }
+
+    public function expense_report(\Illuminate\Http\Request $request)
+    {
+        $branchId = session('selectedBranchId') ?? optional(\Illuminate\Support\Facades\Auth::user())->branch_id ?? null;
+
+        $expenseServices = \App\Models\Expense::distinct()->whereNotNull('service')->pluck('service')->toArray();
+
+        return view('expense.expensereport', compact('expenseServices'));
+    }
 }

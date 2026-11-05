@@ -100,6 +100,10 @@ class AppServiceProvider extends ServiceProvider
                     34 => 'Diet Chart',
                     35 => 'Tax Rates',
                     36 => 'Patients',
+                    37 => 'Sales Report',
+                    38 => 'Purchase Report',
+                    39 => 'Expense Report',
+                    40 => 'Analytics & Summary',
                 ];
 
                 // If tenancy is active, enforce plan module restrictions for ALL users (including Admin)

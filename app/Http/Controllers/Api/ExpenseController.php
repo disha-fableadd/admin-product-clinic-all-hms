@@ -380,4 +380,95 @@ public function store(Request $request)
         $staff = User::all();
         return view('expenses.index', compact('staff'));
     }
+
+    public function getExpensesReport(\Illuminate\Http\Request $request)
+    {
+        $user = auth('sanctum')->user() ?? auth('web')->user() ?? auth()->user();
+        $branchId = $request->input('selectedBranchId') ?? $request->input('selectedSubAdminId') ?? ($request->branch_id ?? session('selectedBranchId') ?? optional($user)->branch_id);
+
+        $filter = $request->query('filter');
+        $month = $request->query('month');
+        $year = $request->query('year');
+        $service = $request->query('expense_type_id') ?: $request->query('service');
+
+        $query = Expense::with(['user', 'branch']);
+
+        if ($branchId) {
+            $query->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+        }
+
+        if ($service && $service !== 'all') {
+            $query->where('service', $service);
+        }
+
+        if ($filter) {
+            $today = \Carbon\Carbon::today();
+            switch ($filter) {
+                case 'this_week':
+                    $query->whereBetween('created_at', [\Carbon\Carbon::now()->startOfWeek(), \Carbon\Carbon::now()->endOfWeek()]);
+                    break;
+                case 'this_month':
+                    $query->whereMonth('created_at', $today->month)->whereYear('created_at', $today->year);
+                    break;
+                case 'last_6_months':
+                    $query->whereBetween('created_at', [\Carbon\Carbon::now()->subMonths(6), \Carbon\Carbon::now()]);
+                    break;
+                case 'this_year':
+                    $query->whereYear('created_at', $today->year);
+                    break;
+                case 'previous_year':
+                    $query->whereYear('created_at', \Carbon\Carbon::now()->subYear()->year);
+                    break;
+            }
+        }
+
+        if ($month) {
+            $query->whereMonth('created_at', $month);
+        }
+        if ($year) {
+            $query->whereYear('created_at', $year);
+        }
+
+        $expenses = $query->orderBy('id', 'desc')->get();
+        $grandTotal = 0;
+
+        $data = $expenses->map(function ($exp) use (&$grandTotal) {
+            $amt = (float) $exp->amount;
+            $grandTotal += $amt;
+
+            $dateFormatted = $exp->date_time 
+                ? \Carbon\Carbon::parse($exp->date_time)->format('Y-m-d')
+                : ($exp->created_at ? $exp->created_at->format('Y-m-d') : '');
+
+            return [
+                'id' => $exp->id,
+                'expense_name' => $exp->service ?: 'General Expense',
+                'amount' => $amt,
+                'expense_date' => $dateFormatted,
+                'description' => $exp->comment ?: ($exp->service ?: 'Expense #' . $exp->id),
+                'user_name' => optional($exp->user)->fullname ?: (optional($exp->user)->name ?: 'Staff'),
+                'branch_name' => optional($exp->branch)->name ?: 'Main Branch',
+            ];
+        });
+
+        $chartMap = [];
+        foreach ($data as $item) {
+            $name = $item['expense_name'];
+            $chartMap[$name] = ($chartMap[$name] ?? 0) + $item['amount'];
+        }
+        arsort($chartMap);
+
+        return response()->json([
+            'status' => true,
+            'data' => $data,
+            'labels' => array_keys($chartMap),
+            'totals' => array_values($chartMap),
+            'grand_total' => $grandTotal,
+            'total' => $grandTotal,
+            'currency_symbol' => '₹',
+            'currency_position' => 'left',
+        ]);
+    }
 }

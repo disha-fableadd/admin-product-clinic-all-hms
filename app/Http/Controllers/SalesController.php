@@ -300,4 +300,22 @@ class SalesController extends Controller
 
         return redirect($invoiceUrl)->with('success', 'Sale bill updated successfully!');
     }
+
+    public function sales_report(\Illuminate\Http\Request $request)
+    {
+        $branchId = session('selectedBranchId') ?? optional(\Illuminate\Support\Facades\Auth::user())->branch_id ?? null;
+
+        $patientsQuery = \App\Models\Patients::where('isDeleted', 0);
+        if ($branchId) {
+            $patientsQuery->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            });
+        }
+        $patients = $patientsQuery->orderBy('fullname', 'asc')->get();
+        $customers = $patients;
+
+        $categories = \App\Models\Category::where('isDeleted', 0)->orderBy('name', 'asc')->get();
+
+        return view('sales.salesreport', compact('customers', 'patients', 'categories'));
+    }
 }
