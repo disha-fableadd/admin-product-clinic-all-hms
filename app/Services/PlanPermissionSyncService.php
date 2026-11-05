@@ -209,6 +209,21 @@ class PlanPermissionSyncService
         }
 
         $features = $plan ? $plan->features : null;
+
+        // If tenant assigned modules are available from admin_erp, use them as primary source of truth
+        if (function_exists('tenant') && ($tMods = tenant('modules'))) {
+            $tModsList = is_array($tMods) ? $tMods : (json_decode($tMods, true) ?: preg_split('/[\n,]+/', (string)$tMods));
+            $tModsList = array_values(array_filter(array_map('trim', (array)$tModsList)));
+            if (!empty($tModsList)) {
+                $features = $tModsList;
+                if ($plan) {
+                    try {
+                        $plan->update(['features' => $features]);
+                    } catch (\Throwable) {}
+                }
+            }
+        }
+
         $subModules = null;
 
         $allowedModuleIds = self::resolveAllowedModuleIds($features, $subModules);

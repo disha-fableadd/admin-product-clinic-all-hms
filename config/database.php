@@ -46,12 +46,12 @@ return [
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', (PHP_OS_FAMILY === 'Windows' ? '127.0.0.1' : 'localhost')),
-            'port' => (PHP_OS_FAMILY !== 'Windows' && in_array(env('DB_HOST', 'localhost'), ['localhost', '127.0.0.1', ''])) ? null : env('DB_PORT', '3306'),
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'forge'),
             'username' => env('DB_USERNAME', 'forge'),
             'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', (PHP_OS_FAMILY !== 'Windows' ? (ini_get('pdo_mysql.default_socket') ?: (@file_exists('/var/run/mysqld/mysqld.sock') ? '/var/run/mysqld/mysqld.sock' : (@file_exists('/tmp/mysql.sock') ? '/tmp/mysql.sock' : ''))) : '')),
+            'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',
@@ -60,6 +60,8 @@ return [
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_TIMEOUT => 5,
             ]) : [],
         ],
 

@@ -302,26 +302,11 @@ class TenantManager
         $dbPassword = (string) ($db['password'] ?? $defaultPassword);
         $databaseName = $db['database'];
 
-        // Auto-detect unix domain socket on Linux (for Hostinger / cPanel / CloudLinux)
-        $unixSocket = null;
-        if (PHP_OS_FAMILY !== 'Windows') {
-            $possibleSockets = [
-                ini_get('pdo_mysql.default_socket'),
-                ini_get('mysqli.default_socket'),
-                '/var/run/mysqld/mysqld.sock',
-                '/tmp/mysql.sock',
-                '/var/lib/mysql/mysql.sock',
-            ];
-            foreach ($possibleSockets as $sock) {
-                if (!empty($sock) && @file_exists($sock)) {
-                    $unixSocket = $sock;
-                    break;
-                }
-            }
-            if (!$unixSocket && !empty(ini_get('pdo_mysql.default_socket'))) {
-                $unixSocket = ini_get('pdo_mysql.default_socket');
-            }
-        }
+        // Always use 127.0.0.1 TCP loopback on port 3306 for local connections to avoid
+        // Hostinger / CageFS unix domain socket EPERM (SQLSTATE[HY000] [2002] Operation not permitted)
+        $unixSocket = env('DB_SOCKET', '');
+        $finalPort = ($dbPort <= 0 || $dbPort === 5432) ? 3306 : $dbPort;
+        $finalHost = in_array(strtolower($dbHost), ['localhost', '127.0.0.1', '']) ? '127.0.0.1' : $dbHost;
 
         // If tenant password was passed as encrypted ciphertext (e.g. from admin_erp with different key or raw DB value), attempt decryption
         if (is_string($dbPassword) && (str_starts_with($dbPassword, 'eyJ') || str_contains($dbPassword, '\"iv\"'))) {
@@ -342,122 +327,50 @@ class TenantManager
             $dbHost = $defaultHost;
         }
 
-        // Test connecting with PDO: try target host, and if Operation not permitted (2002), try alternate (localhost <-> 127.0.0.1)
-        $pdo = null;
-        if (!empty($dbUsername)) {
-            $candidateDsns = [];
-            if (PHP_OS_FAMILY !== 'Windows') {
-                if ($unixSocket) {
-                    $candidateDsns[] = "mysql:unix_socket={$unixSocket}";
-                }
-                $candidateDsns[] = "mysql:host=localhost";
-            } else {
-                $candidateDsns[] = ($dbHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$dbHost};port={$dbPort}";
-                $candidateDsns[] = "mysql:host=127.0.0.1;port={$dbPort}";
-            }
-
-            foreach ($candidateDsns as $dsn) {
-                try {
-                    $pdo = new \PDO($dsn, $dbUsername, $dbPassword, [
-                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
-                        \PDO::ATTR_TIMEOUT => 2,
-                    ]);
-                    if ($pdo) {
-                        break;
-                    }
-                } catch (\Throwable) {
-                    $pdo = null;
-                }
-            }
-        }
-
-        // If tenant specific credentials cannot connect, fallback to environment default credentials
-        if (!$pdo) {
-            $candidateDsns = [];
-            if (PHP_OS_FAMILY !== 'Windows') {
-                if ($unixSocket) {
-                    $candidateDsns[] = "mysql:unix_socket={$unixSocket}";
-                }
-                $candidateDsns[] = "mysql:host=localhost";
-            } else {
-                $candidateDsns[] = ($defaultHost === 'localhost') ? "mysql:host=localhost" : "mysql:host={$defaultHost};port={$defaultPort}";
-                $candidateDsns[] = "mysql:host=127.0.0.1;port={$defaultPort}";
-            }
-
-            foreach ($candidateDsns as $dsn) {
-                try {
-                    $pdo = new \PDO($dsn, $defaultUsername, $defaultPassword, [
-                        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
-                        \PDO::ATTR_TIMEOUT => 2,
-                    ]);
-                    if ($pdo) {
-                        $dbHost = $defaultHost;
-                        $dbPort = $defaultPort;
-                        $dbUsername = $defaultUsername;
-                        $dbPassword = $defaultPassword;
-                        break;
-                    }
-                } catch (\Throwable) {
-                    $pdo = null;
-                }
-            }
-        }
-
-        if ($pdo) {
+        // Test connectivity if necessary and ensure valid database name
+        // Avoid opening multiple throwaway connections per request on high-concurrency pages
+        if (app()->environment('local') && preg_match('/^[a-zA-Z0-9_]+$/', $databaseName)) {
             try {
-                $stmt = $pdo->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = " . $pdo->quote($databaseName));
-                if (!$stmt || !$stmt->fetch()) {
-                    $found = false;
-                    // Check if prefixed with shared host username (e.g. u573967329_clinicdb)
-                    if (!empty($defaultDatabase) && preg_match('/^(u\d+_)/', $defaultDatabase, $m)) {
-                        $prefixedDb = $m[1] . $databaseName;
-                        $chk = $pdo->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = " . $pdo->quote($prefixedDb));
-                        if ($chk && $chk->fetch()) {
-                            $databaseName = $prefixedDb;
-                            $found = true;
-                        }
-                    }
+                $testPdo = new \PDO("mysql:host={$finalHost};port={$finalPort}", $dbUsername, $dbPassword, [
+                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT,
+                    \PDO::ATTR_TIMEOUT => 2,
+                ]);
+                $testPdo->exec("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            } catch (\Throwable) {}
+        }
 
-                    if (!$found) {
-                        // Check if stripped prefix database exists (e.g. u573967329_clinicdb -> clinicdb)
-                        $cleanDbName = preg_replace('/^u\d+_/', '', $databaseName);
-                        $checkCleanStmt = $pdo->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = " . $pdo->quote($cleanDbName));
-                        if ($checkCleanStmt && $checkCleanStmt->fetch()) {
-                            $databaseName = $cleanDbName;
-                            $found = true;
-                        }
-                    }
-
-                    if (!$found) {
-                        if (app()->environment('local') && preg_match('/^[a-zA-Z0-9_]+$/', $databaseName)) {
-                            // On local dev, auto-create database if not exists
-                            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                        } elseif (!empty($defaultDatabase)) {
-                            // On shared hosting if dedicated tenant DB is not created, fallback to default DB from .env
-                            $databaseName = $defaultDatabase;
-                        }
-                    }
-                }
-            } catch (\Throwable) {
-                if (!empty($defaultDatabase)) {
-                    $databaseName = $defaultDatabase;
-                }
+        // Ensure database name has hosting user prefix if required on shared hosting
+        if (!empty($defaultDatabase) && preg_match('/^(u\d+_)/', $defaultDatabase, $m)) {
+            if (!str_starts_with($databaseName, $m[1])) {
+                $candidatePrefixed = $m[1] . $databaseName;
+                $databaseName = $candidatePrefixed;
             }
         }
 
-        $isLinuxLocal = (PHP_OS_FAMILY !== 'Windows' && in_array($dbHost, ['localhost', '127.0.0.1', '']));
-        $finalPort = $isLinuxLocal ? null : $dbPort;
-        $finalHost = $isLinuxLocal ? 'localhost' : $dbHost;
+        $currentConfig = config("database.connections.{$connection}");
+        $isSameConfig = ($currentConfig['host'] ?? '') === $finalHost
+            && (int) ($currentConfig['port'] ?? 0) === (int) $finalPort
+            && ($currentConfig['database'] ?? '') === $databaseName
+            && ($currentConfig['username'] ?? '') === $dbUsername
+            && ($currentConfig['password'] ?? '') === $dbPassword
+            && ($currentConfig['unix_socket'] ?? '') === '';
 
-        config([
-            "database.connections.{$connection}.host" => $finalHost,
-            "database.connections.{$connection}.port" => $finalPort,
-            "database.connections.{$connection}.database" => $databaseName,
-            "database.connections.{$connection}.username" => $dbUsername,
-            "database.connections.{$connection}.password" => $dbPassword,
-            "database.connections.{$connection}.unix_socket" => $unixSocket ?: '',
-        ]);
-        DB::purge($connection);
+        if (!$isSameConfig) {
+            config([
+                "database.connections.{$connection}.host" => $finalHost,
+                "database.connections.{$connection}.port" => $finalPort,
+                "database.connections.{$connection}.database" => $databaseName,
+                "database.connections.{$connection}.username" => $dbUsername,
+                "database.connections.{$connection}.password" => $dbPassword,
+                "database.connections.{$connection}.unix_socket" => '',
+                "database.connections.{$connection}.options" => array_filter([
+                    \PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                    \PDO::ATTR_PERSISTENT => true,
+                    \PDO::ATTR_TIMEOUT => 5,
+                ]),
+            ]);
+            DB::purge($connection);
+        }
 
         $this->isolateFilesystem((int) $tenant['id']);
 
