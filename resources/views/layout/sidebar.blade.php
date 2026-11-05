@@ -15,9 +15,9 @@
         'report.*'
     );
 
-    $isAccountingActive = !$isReportsActive && (
-        request()->routeIs('account_ledger.*', 'inventory.*', 'invoice.*') || (request()->routeIs('expense.*') && !request()->routeIs('expense.report'))
-    );
+    $isAccountingActive = request()->routeIs(
+        'account_ledger.*', 'inventory.*', 'invoice.*'
+    ) || (request()->routeIs('expense.*') && !request()->routeIs('expense.report'));
 
     $isReportsActive = request()->routeIs(
         'chart', 'sales.report', 'purchase.report', 'expense.report') || request()->is('chart*', 'sales-report*', 'purchase-report*', 'expense-report*'
@@ -29,17 +29,15 @@
 
     // Default first menu (HMS Modules / ERP) to active and open on dashboard or refresh when no other category is active
     // NOTE: Explicitly exclude report routes so they don't trigger ERP section
-    $isErpActive = !$isReportsActive && (
-        request()->routeIs(
-            'patients.*', 'diagnosis.*', 'referaldoctor.*',
-            'appointment.*', 'followup.*',
-            'treatment.*', 'treatment_booking.*', 'machine.*',
-            'medicine.*', 'category.*', 'brand.*', 'medicine_unit.*', 'symptoms.*',
-            'sales.*', 'purchase.*',
-            'supplier.*', 'vendor.*',
-            'user.*'
-        ) || $isDashboardActive || (!$isClinicalActive && !$isAccountingActive && !$isSettingsActive)
-    );
+    $isErpActive = (request()->routeIs(
+        'patients.*', 'diagnosis.*', 'referaldoctor.*',
+        'appointment.*', 'followup.*',
+        'treatment.*', 'treatment_booking.*', 'machine.*',
+        'medicine.*', 'category.*', 'brand.*', 'medicine_unit.*', 'symptoms.*',
+        'sales.*', 'purchase.*',
+        'supplier.*', 'vendor.*',
+        'user.*'
+    ) && !$isReportsActive) || $isDashboardActive || (!$isClinicalActive && !$isAccountingActive && !$isReportsActive && !$isSettingsActive);
 
     $showErpSection = tenant_has_module(['Patients', 'Appointments', 'Medicines', 'Followup', 'Staffs', 'Sale Bill', 'Purchase Bill', 'Vendors', 'Treatments']);
     $showClinicalSection = tenant_has_module(['OPD', 'IPD', 'Daily Register', 'Therapy', 'Diet Chart', 'Clinical Notes', 'Diagnostic Service', 'Medical Report', 'OT & Discharge', 'Clinical Services']);
@@ -548,7 +546,7 @@
                                     <span>Sale Bill</span>
                                     <span class="menu-arrow"></span>
                                 </a>
-                                <ul style="{{ $isSaleBillActive ? 'display: block;' : 'display: none;' }}">
+                                <ul style="{{ request()->routeIs('sales.*') ? 'display: block;' : 'display: none;' }}">
                                     <li class="{{ request()->routeIs('sales.list') ? 'active' : '' }}">
                                         <a href="{{ route('sales.list') }}" class="{{ request()->routeIs('sales.list') ? 'active' : '' }}">
                                             <i class="fa fa-list-alt icons"></i>
@@ -576,7 +574,7 @@
                                     <span>Purchase Bill</span>
                                     <span class="menu-arrow"></span>
                                 </a>
-                                <ul style="{{ $isPurchaseBillActive ? 'display: block;' : 'display: none;' }}">
+                                <ul style="{{ request()->routeIs('purchase.*') ? 'display: block;' : 'display: none;' }}">
                                     <li class="{{ request()->routeIs('purchase.lists') ? 'active' : '' }}">
                                         <a href="{{ route('purchase.lists') }}" class="{{ request()->routeIs('purchase.lists') ? 'active' : '' }}">
                                             <i class="fa fa-list icons"></i>
@@ -1006,14 +1004,13 @@
 
                             {{-- Expenses --}}
                             @if (tenant_has_module('Expenses') && (app('hasPermission')(22, 'view') || app('hasPermission')(5, 'view')))
-                                @php $isExpensesActive = (request()->routeIs('expense.*') && !request()->routeIs('expense.report')) && !request()->is('expense-report*'); @endphp
-                                <li class="submenu sidebar-module {{ $isExpensesActive ? 'active' : '' }}">
-                                    <a href="javascript:void(0);" class="{{ $isExpensesActive ? 'subdrop active' : '' }}">
+                                <li class="submenu sidebar-module {{ request()->routeIs('expense.*') ? 'active' : '' }}">
+                                    <a href="javascript:void(0);" class="{{ request()->routeIs('expense.*') ? 'subdrop active' : '' }}">
                                         <i class="fas fa-money-bill-wave icons"></i>
                                         <span>Expenses</span>
                                         <span class="menu-arrow"></span>
                                     </a>
-                                    <ul style="{{ $isExpensesActive ? 'display: block;' : 'display: none;' }}">
+                                    <ul style="{{ request()->routeIs('expense.*') ? 'display: block;' : 'display: none;' }}">
                                         <li class="{{ request()->routeIs('expense.index') ? 'active' : '' }}">
                                             <a href="{{ route('expense.index') }}" class="{{ request()->routeIs('expense.index') ? 'active' : '' }}">
                                                 <i class="fa fa-list-alt icons"></i>
