@@ -41,7 +41,7 @@ class AuthController extends Controller
     {
         $normalized = mb_strtolower(trim($email));
 
-        // Strictly search by username (not email)
+        // Search by username first
         if (DB::getSchemaBuilder()->hasColumn('user', 'username')) {
             $userByUsername = User::whereRaw('LOWER(TRIM(username)) = ?', [$normalized])->first();
             if ($userByUsername) {
@@ -49,9 +49,18 @@ class AuthController extends Controller
             }
         }
 
-        // Fallback matching username only
+        // Search by email as fallback
+        if (DB::getSchemaBuilder()->hasColumn('user', 'email')) {
+            $userByEmail = User::whereRaw('LOWER(TRIM(email)) = ?', [$normalized])->first();
+            if ($userByEmail) {
+                return $userByEmail;
+            }
+        }
+
+        // Fallback matching username or email in collection
         return User::all()->first(function (User $candidate) use ($normalized) {
-            return !empty($candidate->username) && mb_strtolower(trim((string) $candidate->username)) === $normalized;
+            return (!empty($candidate->username) && mb_strtolower(trim((string) $candidate->username)) === $normalized)
+                || (!empty($candidate->email) && mb_strtolower(trim((string) $candidate->email)) === $normalized);
         });
     }
 
@@ -253,6 +262,11 @@ class AuthController extends Controller
         ], 422);
     }
 
+    // Identify tenant & switch to this client's database according to validated username / email
+    if ($denied = $this->ensureTenantAllowsLogin($request)) {
+        return $denied;
+    }
+
     $maxAttempts = 5;
     $lockMinutes = 5;
 
@@ -433,6 +447,11 @@ class AuthController extends Controller
                 'status' => false,
                 'message' => 'Username is required.',
             ], 422);
+        }
+
+        // Identify tenant & switch to this client's database according to validated username / email
+        if ($denied = $this->ensureTenantAllowsLogin($request)) {
+            return $denied;
         }
 
         $user = $this->findUserByLoginEmail($username);
@@ -828,7 +847,7 @@ class AuthController extends Controller
             $tenancy->resolveByHost($request->getHost(), true);
             return null;
         } catch (\App\Exceptions\TenantResolutionException $e) {
-            if ($e->reason === 'NOT_FOUND' && !empty($login)) {
+            if (in_array($e->reason, ['NOT_FOUND', 'AMBIGUOUS'], true) && !empty($login)) {
                 try {
                     $tenant = $tenancy->resolveByEmail($login, true);
                     if ($request->hasSession()) {

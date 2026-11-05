@@ -228,13 +228,15 @@ class IdentifyTenant
         $host = preg_replace('#:\d+$#', '', $host);
 
         $appHost = parse_url(config('app.url'), PHP_URL_HOST);
-        if ($appHost && strtolower($appHost) === $host && in_array($host, ['localhost', '127.0.0.1'], true)) {
+        if ($appHost && strtolower($appHost) === $host) {
             return true;
         }
 
         return in_array($host, [
             'localhost',
             '127.0.0.1',
+            'hms.fableadtech.com',
+            'clinic.fableadtech.com',
         ], true);
     }
 }
