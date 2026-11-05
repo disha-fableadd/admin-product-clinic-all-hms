@@ -151,6 +151,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/expenses/filters', [ExpenseController::class, 'getExpenseFilters']);
     Route::get('/patients/years', [PatientController::class, 'getYears']);
+    Route::match(['get', 'post'], '/expenses/report', [ExpenseController::class, 'getExpensesReport']);
     Route::apiResource('expenses', ExpenseController::class);
     Route::apiResource('treatment_booking', TreatmentBookingController::class);
     Route::get('/patient-medicine/{id}/download', [PatientMedicineController::class, 'medicineDownload']);
@@ -538,10 +539,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/chart-data', [chartController::class, 'getChartData']); //done
     Route::get('/report-overview', [chartController::class, 'getReportOverview']); // report page stats & overview
-    Route::get('/order-report', [\App\Http\Controllers\Api\SalesController::class, 'orderReport']);
-    Route::get('/purchase-report-data', [\App\Http\Controllers\Api\PurchaseController::class, 'fetch_purchase_report']);
-    Route::get('/purchase-product-chart', [\App\Http\Controllers\Api\PurchaseController::class, 'purchaseProductChart']);
-    Route::get('/expenses/report', [ExpenseController::class, 'getExpensesReport']);
+    Route::match(['get', 'post'], '/order-report', [\App\Http\Controllers\Api\SalesController::class, 'orderReport']);
+    Route::match(['get', 'post'], '/purchase-report-data', [\App\Http\Controllers\Api\PurchaseController::class, 'fetch_purchase_report']);
+    Route::match(['get', 'post'], '/purchase-product-chart', [\App\Http\Controllers\Api\PurchaseController::class, 'purchaseProductChart']);
+    Route::match(['get', 'post'], '/expenses/report', [ExpenseController::class, 'getExpensesReport']);
 
     Route::post('/send-sms', [SmsController::class, 'sendSms'])->name('send.sms'); //done
 

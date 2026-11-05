@@ -415,15 +415,22 @@
             white-space: normal !important;
         }
     </style>
-    <div class="content">
-        <div class="page-header">
-            <div class="page-title">
-                <h4>Sales Report</h4>
-            </div>
-            <div class="total-expense-summary">
-                <h5 id="total-expense-amount" class="mb-0 px-3 py-1 mx-3 rounded bg-light total_expense">
-                    Total: ₹0.00
-                </h5>
+    <div class="page-wrapper">
+    <div class="content px-3 px-md-4 pt-3 pb-4">
+        <!-- Main Title / Banner Card matching other clinic pages -->
+        <div class="card border-0 mb-4 table-container-card overflow-hidden" style="border-radius: 16px;">
+            <div class="card-header" style="background-color: #f89884 !important; border-bottom: none !important; padding: 14px 22px !important; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top-left-radius: 16px !important; border-top-right-radius: 16px !important;">
+                <h3 class="card-title d-inline-block text-white mb-0" style="font-weight: 700; font-size: 19px;">
+                    <i class="fa fa-chart-line px-2"></i> Sales Report
+                </h3>
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="gap:10px">
+                    <span id="total-expense-amount" class="total-pill" style="background:#ffffff !important; color:#d9534f !important; font-weight:700 !important; font-size:13.5px !important; border-radius:50px !important; padding:6px 18px !important; display:inline-flex !important; align-items:center !important; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                        Total: ₹0.00
+                    </span>
+                    <button id="generate-pdf" class="btn btn-hdr" style="background:#ffffff !important; color:#f89884 !important; font-weight:700 !important; font-size:13px !important; border-radius:50px !important; padding:6px 18px !important; border:none !important; display:inline-flex !important; align-items:center !important; gap:6px !important; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                        <i class="fa-solid fa-file-pdf"></i> View PDF
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -553,7 +560,7 @@
         </div>
 
     </div>
-
+</div>
 
 @endsection
 @push('js')
@@ -742,7 +749,7 @@
                 };
 
                 $.ajax({
-                    url: "/api/order-report",
+                    url: "{{ url('/api/order-report') }}",
                     type: "GET",
                     data: filters,
                     headers: {
@@ -772,7 +779,7 @@
                             <td class="productimgname">
                                 <div style="display: flex; align-items: center; gap: 10px;">
                                     <a href="/product-view/${item.product_id}" style="display: flex; align-items: center; text-decoration: none; color: inherit;">
-                                        <img src="${item.image_url || (ImagePath + item.image)}" onerror="this.onerror=null;this.src='{{ asset(\'admin/assets/img/product/noimage.png\') }}';" alt="${item.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
+                                        <img src="${item.image_url || (ImagePath + item.image)}" onerror="this.onerror=null;this.src='{{ asset('admin/assets/img/product/noimage.png') }}';" alt="${item.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 5px;">
                                         <span style="margin-left: 10px;">${item.name}</span>
                                     </a>
                                 </div>
@@ -870,7 +877,7 @@
                 const chartContainer = $("#salesProductChart").parent();
 
                 $.ajax({
-                    url: "/api/order-report",
+                    url: "{{ url('/api/order-report') }}",
                     type: "GET",
                     data: filters,
                     headers: {
