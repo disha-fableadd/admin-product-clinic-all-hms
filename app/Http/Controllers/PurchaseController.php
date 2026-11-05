@@ -977,7 +977,7 @@ class PurchaseController extends Controller
         }
         $vendors = $vendorsQuery->orderBy('name', 'asc')->get();
 
-        $categories = \App\Models\Category::where('isDeleted', 0)->orderBy('name', 'asc')->get();
+        $categories = \App\Models\Category::query()->get()->sortBy(function($c) { return strtolower($c->name ?? ''); })->values();
 
         return view('purchase.purchasereport', compact('vendors', 'categories'));
     }
