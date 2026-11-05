@@ -414,7 +414,119 @@
         .table tbody tr td {
             white-space: normal !important;
         }
-    </style>
+    
+    /* Table top layout & filters */
+    .table-top {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        margin-bottom: 18px !important;
+        padding-bottom: 14px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+    .table-top .search-set {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin: 0 !important;
+        flex: 1 1 auto !important;
+    }
+    .table-top .search-set select, 
+    .table-top .search-set .form-select {
+        margin: 0 !important;
+        height: 38px !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 50px !important;
+        padding: 6px 16px !important;
+        font-size: 13px !important;
+        color: #1e293b !important;
+        background-color: #ffffff !important;
+        outline: none !important;
+        transition: all 0.2s ease !important;
+        box-shadow: none !important;
+    }
+    .table-top .search-set select:focus, 
+    .table-top .search-set .form-select:focus {
+        border-color: #f89884 !important;
+        box-shadow: 0 0 0 3px rgba(248, 152, 132, 0.2) !important;
+    }
+    .table-top .wordset {
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    .table-top .wordset ul, .wordset ul {
+        list-style: none !important;
+        list-style-type: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    .table-top .wordset ul li, .wordset ul li {
+        list-style: none !important;
+        list-style-type: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .btn-generate-pdf, .wordset .btn, .wordset button, .wordset a button {
+        background-color: #f89884 !important;
+        border: none !important;
+        border-radius: 50px !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        color: #ffffff !important;
+        padding: 8px 20px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        box-shadow: 0 2px 8px rgba(248, 152, 132, 0.25) !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+        text-decoration: none !important;
+    }
+    .btn-generate-pdf:hover, .wordset .btn:hover, .wordset button:hover, .wordset a button:hover {
+        background-color: #f67e65 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(248, 152, 132, 0.35) !important;
+        color: #ffffff !important;
+    }
+
+    /* DataTables controls styling */
+    .dataTables_wrapper .dataTables_length {
+        margin-bottom: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+    .dataTables_wrapper .dataTables_length select {
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 50px !important;
+        padding: 4px 12px !important;
+        height: 34px !important;
+        outline: none !important;
+        margin: 0 6px !important;
+    }
+    .dataTables_wrapper .dataTables_filter {
+        margin-bottom: 12px !important;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 50px !important;
+        padding: 6px 16px !important;
+        height: 36px !important;
+        outline: none !important;
+    }
+    .dataTables_wrapper .dataTables_filter input:focus,
+    .dataTables_wrapper .dataTables_length select:focus {
+        border-color: #f89884 !important;
+        box-shadow: 0 0 0 3px rgba(248, 152, 132, 0.2) !important;
+    }
+
+</style>
     <div class="page-wrapper">
     <div class="content px-3 px-md-4 pt-3 pb-4">
         <!-- Main Title / Banner Card matching other clinic pages -->
@@ -460,13 +572,13 @@
                 </div>
             </div>
 
-            <div class="card-body d-flex align-items-center justify-content-center" style="height: 350px;">
+            <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 260px; position: relative;">
                 <canvas id="salesProductChart" style="max-height: 320px; width: 100%;"></canvas>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-body" style="overflow:auto;">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body" style="padding: 22px;">
                 <div class="table-top">
                     <div class="search-set">
                         <select id="date-filter" class="form-select form-select-sm">
@@ -478,23 +590,21 @@
                             <option value="previous_year">Previous Year</option>
                         </select>
 
-                        <select id="month-filter" class="form-select form-select-sm"
-                            style="margin-right:8px; margin-left: 8px;">
+                        <select id="month-filter" class="form-select form-select-sm">
                             <option value="">All Months</option>
                             @for ($m = 1; $m <= 12; $m++)
                                 <option value="{{ $m }}">{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
                             @endfor
                         </select>
 
-                        <select id="year-filter" class="form-select form-select-sm" style="margin-right:8px;">
+                        <select id="year-filter" class="form-select form-select-sm">
                             <option value="">All Years</option>
                             @for ($y = date('Y'); $y >= date('Y') - 10; $y--)
                                 <option value="{{ $y }}">{{ $y }}</option>
                             @endfor
                         </select>
 
-                        <select id="vendor-filter" class="form-select form-select-sm"
-                            style="margin-right:8px; min-width: 180px;">
+                        <select id="vendor-filter" class="form-select form-select-sm" style="min-width: 180px;">
                             <option value="">All Customers / Patients</option>
                             @php
                                 $displayList = isset($patients) && count($patients) ? $patients : ($customers ?? []);
@@ -504,8 +614,7 @@
                             @endforeach
                         </select>
 
-                        <select id="category-filter" class="form-select form-select-sm"
-                            style="margin-right:8px; min-width: 180px;">
+                        <select id="category-filter" class="form-select form-select-sm" style="min-width: 180px;">
                             <option value="">All Categories</option>
                             @isset($categories)
                                 @foreach ($categories as $category)
@@ -513,19 +622,11 @@
                                 @endforeach
                             @endisset
                         </select>
-
                     </div>
                     <div class="wordset">
-                        <ul>
-                            <li>
-                                <a id="generate-pdf" href="javascript:void(0);" data-bs-toggle="tooltip"
-                                    data-bs-placement="top" title="Download PDF">
-
-                                    <button class="btn btn-primary btn-sm"><i class="fa-solid fa-file-pdf"></i> View
-                                        PDF</button>
-                                </a>
-                            </li>
-                        </ul>
+                        <button type="button" class="btn btn-primary btn-sm btn-generate-pdf" id="generate-pdf-btn">
+                            <i class="fa-solid fa-file-pdf"></i> View PDF
+                        </button>
                     </div>
                 </div>
                 <div class="table-scroll-top">
@@ -888,24 +989,19 @@
                         updateSalesSummary(response);
                         if (!response.status || !response.data.length) {
                             if (window.salesChart) window.salesChart.destroy();
+                            chartContainer.find('#salesProductChart').hide();
                             chartContainer.append(`
-                                <div id="noSalesMessage"
-                                    style="
-                                                display: flex;
-                                                align-items: center;
-                                                justify-content: center;
-                                                height: 100%;
-                                                width: 100%;
-                                                color: #6b7280;
-                                                font-size: 16px;
-                                                text-align: center;
-                                                margin-left: -1212px
-                                            ">
-                                    No sales found.
+                                <div id="noSalesMessage" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 35px 20px; width: 100%; text-align: center;">
+                                    <div style="width: 52px; height: 52px; border-radius: 50%; background: #fff5f2; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                                        <i class="fa fa-chart-pie" style="font-size: 22px; color: #f89884;"></i>
+                                    </div>
+                                    <div style="font-weight: 600; color: #475569; font-size: 15px;">No Sales Records Found</div>
+                                    <p class="text-muted mb-0" style="font-size: 13px;">No sales transactions match the selected filter period.</p>
                                 </div>
                             `);
                             return;
                         }
+                        chartContainer.find('#salesProductChart').show();
 
                         // ✅ Aggregate by product
                         const productTotals = {};
@@ -992,7 +1088,7 @@
                 });
             }
 
-            $('#generate-pdf').on('click', function() {
+            $(document).on('click', '#generate-pdf, #generate-pdf-btn, .btn-generate-pdf', function() {
                 if (allSelectedIds.length === 0) {
                     Swal.fire({
                         icon: 'warning',
