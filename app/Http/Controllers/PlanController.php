@@ -148,8 +148,20 @@ class PlanController extends Controller
                 $updateData['start_date'] = $tenantStart;
                 $needsUpdate = true;
             }
-            if (!empty($tenant['billing_cycle']) && $plan->duration !== (str_contains(strtolower($tenant['billing_cycle']), 'month') ? 'month' : 'year')) {
-                $updateData['duration'] = str_contains(strtolower($tenant['billing_cycle']), 'month') ? 'month' : 'year';
+            $targetCycle = str_contains(strtolower($tenant['billing_cycle'] ?? ''), 'month') ? 'month' : 'year';
+            $currentDur = strtolower(trim((string)$plan->duration));
+            $isSameCycle = ($targetCycle === 'month' && ($currentDur === 'month' || $currentDur === '1')) ||
+                           ($targetCycle === 'year' && ($currentDur === 'year' || $currentDur === '12' || $currentDur === '0' || empty($currentDur)));
+
+            if (!empty($tenant['billing_cycle']) && !$isSameCycle) {
+                $val = $targetCycle;
+                try {
+                    $colType = \Illuminate\Support\Facades\Schema::getColumnType('plans', 'duration');
+                    if (in_array(strtolower($colType), ['integer', 'int', 'bigint', 'smallint', 'tinyint'], true)) {
+                        $val = ($targetCycle === 'month') ? 1 : 12;
+                    }
+                } catch (\Throwable) {}
+                $updateData['duration'] = $val;
                 $needsUpdate = true;
             }
 
@@ -405,13 +417,17 @@ class PlanController extends Controller
 
                 if ($currentPlan) {
                     $isMonth = str_contains($cycle, 'month');
-                    $durationInt = $isMonth ? 1 : 12;
-                    $durationStr = $isMonth ? 'month' : 'year';
+                    $durationValue = $isMonth ? 1 : 12;
+                    try {
+                        $colType = \Illuminate\Support\Facades\Schema::getColumnType('plans', 'duration');
+                        if (!in_array(strtolower($colType), ['integer', 'int', 'bigint', 'smallint', 'tinyint'], true)) {
+                            $durationValue = $isMonth ? 'month' : 'year';
+                        }
+                    } catch (\Throwable) {}
 
-                    // Default to integer duration which is universally compatible with both INT and VARCHAR columns
                     $planUpdatePayload = [
                         'is_active' => 1,
-                        'duration' => $durationInt,
+                        'duration' => $durationValue,
                         'start_date' => $renewalStartDate,
                         'end_date' => $newEndDate,
                         'total_amount' => $validated['amount'],
@@ -420,13 +436,11 @@ class PlanController extends Controller
                     try {
                         $currentPlan->update($planUpdatePayload);
                     } catch (\Throwable $e) {
-                        // Fallback: try string duration if table strictly expects string
                         try {
-                            $planUpdatePayload['duration'] = $durationStr;
+                            $planUpdatePayload['duration'] = is_numeric($durationValue) ? ($isMonth ? 'month' : 'year') : ($isMonth ? 1 : 12);
                             $currentPlan->update($planUpdatePayload);
                         } catch (\Throwable $e2) {
-                            Log::error('Failed to update plan duration: ' . $e2->getMessage());
-                            // Update without duration if duration column has strict constraint
+                            \Illuminate\Support\Facades\Log::warning('Failed to update plan duration: ' . $e2->getMessage());
                             unset($planUpdatePayload['duration']);
                             $currentPlan->update($planUpdatePayload);
                         }

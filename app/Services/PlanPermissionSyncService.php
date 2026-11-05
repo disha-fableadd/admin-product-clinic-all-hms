@@ -174,6 +174,23 @@ class PlanPermissionSyncService
      */
     public static function syncPlanModulesAndPermissions(?Plan $plan = null): array
     {
+        // Ensure plans.duration column is flexible VARCHAR if it is still integer
+        try {
+            if (Schema::hasTable('plans') && Schema::hasColumn('plans', 'duration')) {
+                $colType = Schema::getColumnType('plans', 'duration');
+                if (in_array(strtolower($colType), ['integer', 'int', 'bigint', 'smallint', 'tinyint'], true)) {
+                    DB::statement("ALTER TABLE `plans` MODIFY COLUMN `duration` VARCHAR(255) NULL");
+                }
+            }
+        } catch (\Throwable) {}
+
+        // Ensure sms_templates.branch_id column exists if table is present
+        try {
+            if (Schema::hasTable('sms_templates') && !Schema::hasColumn('sms_templates', 'branch_id')) {
+                DB::statement("ALTER TABLE `sms_templates` ADD COLUMN `branch_id` BIGINT UNSIGNED NULL AFTER `user_id`");
+            }
+        } catch (\Throwable) {}
+
         if (!Schema::hasTable('modules') || !Schema::hasTable('user_permissions')) {
             return ['allowed_module_ids' => [], 'synced_modules_count' => 0];
         }
