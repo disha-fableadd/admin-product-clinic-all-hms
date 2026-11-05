@@ -504,15 +504,22 @@
     </style>
 
 
-    <div class="content">
-        <div class="page-header">
-            <div class="page-title">
-                <h4>Purchase Report</h4>
-            </div>
-            <div class="total-expense-summary">
-                <h5 id="total-expense-amount" class="mb-0 px-3 py-1 mx-3 rounded bg-light total_expense">
-                    <!-- Gets updated by JS -->Total:
-                </h5>
+    <div class="page-wrapper">
+    <div class="content px-3 px-md-4 pt-3 pb-4">
+        <!-- Main Title / Banner Card matching other clinic pages -->
+        <div class="card border-0 mb-4 table-container-card overflow-hidden" style="border-radius: 16px;">
+            <div class="card-header" style="background-color: #f89884 !important; border-bottom: none !important; padding: 14px 22px !important; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top-left-radius: 16px !important; border-top-right-radius: 16px !important;">
+                <h3 class="card-title d-inline-block text-white mb-0" style="font-weight: 700; font-size: 19px;">
+                    <i class="fa fa-shopping-cart px-2"></i> Purchase Report
+                </h3>
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="gap:10px">
+                    <span id="total-expense-amount" class="total-pill" style="background:#ffffff !important; color:#d9534f !important; font-weight:700 !important; font-size:13.5px !important; border-radius:50px !important; padding:6px 18px !important; display:inline-flex !important; align-items:center !important; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                        Total: ₹0.00
+                    </span>
+                    <button id="generate-pdf" class="btn btn-hdr" style="background:#ffffff !important; color:#f89884 !important; font-weight:700 !important; font-size:13px !important; border-radius:50px !important; padding:6px 18px !important; border:none !important; display:inline-flex !important; align-items:center !important; gap:6px !important; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+                        <i class="fa-solid fa-file-pdf"></i> View PDF
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -652,6 +659,7 @@
             </div>
         </div>
     </div>
+</div>
 
     {{-- ✅ Scripts --}}
     

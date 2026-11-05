@@ -707,10 +707,10 @@ Route::get('/dietchart/export', [DietChartController::class, 'exportDietChart'])
     Route::get('/expense-report', [ExpenseController::class, 'expense_report'])->name('expense.report');
 
     // Report AJAX endpoints (accessible with web session / Sanctum)
-    Route::get('/api/order-report', [\App\Http\Controllers\Api\SalesController::class, 'orderReport'])->name('api.order-report');
-    Route::get('/api/purchase-report-data', [\App\Http\Controllers\Api\PurchaseController::class, 'fetch_purchase_report'])->name('api.purchase-report-data');
-    Route::get('/api/purchase-product-chart', [\App\Http\Controllers\Api\PurchaseController::class, 'purchaseProductChart'])->name('api.purchase-product-chart');
-    Route::get('/api/expenses/report', [\App\Http\Controllers\Api\ExpenseController::class, 'getExpensesReport'])->name('api.expenses.report');
+    Route::match(['get', 'post'], '/api/order-report', [\App\Http\Controllers\Api\SalesController::class, 'orderReport'])->name('api.order-report');
+    Route::match(['get', 'post'], '/api/purchase-report-data', [\App\Http\Controllers\Api\PurchaseController::class, 'fetch_purchase_report'])->name('api.purchase-report-data');
+    Route::match(['get', 'post'], '/api/purchase-product-chart', [\App\Http\Controllers\Api\PurchaseController::class, 'purchaseProductChart'])->name('api.purchase-product-chart');
+    Route::match(['get', 'post'], '/api/expenses/report', [\App\Http\Controllers\Api\ExpenseController::class, 'getExpensesReport'])->name('api.expenses.report');
 
 
     Route::get('/sms', [SmsController::class, 'index'])->name('sms.index');
