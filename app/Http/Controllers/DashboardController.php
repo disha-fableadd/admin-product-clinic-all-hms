@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -130,6 +130,34 @@ class DashboardController extends Controller
 
     private function getPlanExpirationWarning($user)
     {
+        // --- Primary: read expiry_date from admin_erp tenant session ---
+        $tenant = session('tenant');
+
+        if (is_array($tenant) && !empty($tenant['expiry_date'])) {
+            try {
+                $today      = Carbon::today();
+                $expiryDate = Carbon::parse($tenant['expiry_date']);
+                $daysRemaining = $today->diffInDays($expiryDate, false);
+
+                // Show warning only within the last 30 days before expiry
+                if ($daysRemaining >= 0 && $daysRemaining <= 30) {
+                    return [
+                        'plan_name'      => $tenant['plan_name'] ?? 'Subscription',
+                        'expiry_date'    => $expiryDate->format('d M Y'),
+                        'days_remaining' => (int) $daysRemaining,
+                        'plan_duration'  => $tenant['billing_cycle'] ?? null,
+                        'price'          => $tenant['amount'] ?? null,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // fall through to local Plan fallback below
+            }
+
+            // If tenant session exists but plan is not expiring soon, skip local fallback
+            return null;
+        }
+
+        // --- Fallback: read from local plans table (when tenancy is disabled / localhost) ---
         if (!$user || !$user->plan_id) {
             return null;
         }
@@ -149,11 +177,11 @@ class DashboardController extends Controller
         }
 
         return [
-            'plan_name' => $plan->name,
-            'expiry_date' => $expiryDate->format('d M Y'),
-            'days_remaining' => $daysRemaining,
-            'plan_duration' => $plan->duration,
-            'price' => $plan->price,
+            'plan_name'      => $plan->name,
+            'expiry_date'    => $expiryDate->format('d M Y'),
+            'days_remaining' => (int) $daysRemaining,
+            'plan_duration'  => $plan->duration,
+            'price'          => $plan->price,
         ];
     }
 

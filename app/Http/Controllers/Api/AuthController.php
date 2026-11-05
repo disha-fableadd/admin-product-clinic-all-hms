@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers\Api;
 
@@ -719,6 +719,33 @@ class AuthController extends Controller
      */
     private function checkPlanExpiration($user)
     {
+        // --- Primary: check expiry_date from admin_erp tenant (via tenancy session) ---
+        // Note: The main admin_erp expiry block happens in ensureTenantAllowsLogin():
+        // resolveByEmail() throws EXPIRED exception if membership_status === 'Expired'.
+        // This local check is a secondary guard for local-plan-based expiry.
+        $tenant = session('tenant');
+        if (is_array($tenant) && !empty($tenant['expiry_date'])) {
+            try {
+                $expiryDate = \Carbon\Carbon::parse($tenant['expiry_date']);
+                $today      = \Carbon\Carbon::today();
+                // Treat expiry as end-of-day: allow login ON the expiry day
+                if ($expiryDate->startOfDay()->isPast() && !$expiryDate->isToday()) {
+                    return [
+                        'expired'   => true,
+                        'plan_data' => [
+                            'plan_name'    => $tenant['plan_name'] ?? 'Subscription',
+                            'expiry_date'  => $expiryDate->format('d M Y'),
+                            'expired_days' => (int) $today->diffInDays($expiryDate, false),
+                            'price'        => $tenant['amount'] ?? null,
+                            'duration'     => $tenant['billing_cycle'] ?? null,
+                        ]
+                    ];
+                }
+            } catch (\Throwable $e) {}
+            return ['expired' => false, 'plan_data' => null];
+        }
+
+        // --- Fallback: local plans table (tenancy disabled / localhost) ---
         if (!$user || !$user->plan_id) {
             return ['expired' => false, 'plan_data' => null];
         }
@@ -736,11 +763,11 @@ class AuthController extends Controller
             return [
                 'expired' => true,
                 'plan_data' => [
-                    'plan_name' => $plan->name,
-                    'expiry_date' => $expiryDate->format('d M Y'),
+                    'plan_name'    => $plan->name,
+                    'expiry_date'  => $expiryDate->format('d M Y'),
                     'expired_days' => $today->diffInDays($expiryDate, false),
-                    'price' => $plan->price,
-                    'duration' => $plan->duration
+                    'price'        => $plan->price,
+                    'duration'     => $plan->duration
                 ]
             ];
         }
