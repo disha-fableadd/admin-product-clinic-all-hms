@@ -833,30 +833,36 @@ class UserController extends Controller
         $loggedInUserId = auth()->id();
 
         try {
-            // Check plan limit for staff (user_limit)
-            $authUser = auth()->user();
-            $plan = null;
-            if ($authUser && $authUser->plan_id) {
-                $plan = \App\Models\Plan::find($authUser->plan_id);
-            }
-            if (!$plan) {
-                $plan = \App\Models\Plan::where('is_active', 1)->first() ?: \App\Models\Plan::first();
+            // Check plan limit for staff (user_limit / max_user)
+            $staffLimit = function_exists('plan_user_limit') ? plan_user_limit() : null;
+            if ($staffLimit === null) {
+                $authUser = auth()->user();
+                $plan = null;
+                if ($authUser && $authUser->plan_id) {
+                    $plan = \App\Models\Plan::find($authUser->plan_id);
+                }
+                if (!$plan) {
+                    $plan = \App\Models\Plan::where('is_active', 1)->first() ?: \App\Models\Plan::first();
+                }
+                if ($plan && $plan->user_limit !== null && (int) $plan->user_limit > 0) {
+                    $staffLimit = (int) $plan->user_limit;
+                }
             }
 
-            if ($plan && $plan->user_limit !== null && (int) $plan->user_limit > 0) {
-                $existingStaffCount = User::where(function ($q) {
-                        $q->where('is_deleted', 0)->orWhereNull('is_deleted');
-                    })
-                    ->where(function ($q) {
-                        $q->where('role_id', '!=', 2)->orWhereNull('role_id');
-                    })
-                    ->count();
+            if ($staffLimit !== null && $staffLimit > 0) {
+                $existingStaffCount = function_exists('current_staff_count')
+                    ? current_staff_count()
+                    : User::where(function ($q) {
+                            $q->where('is_deleted', 0)->orWhereNull('is_deleted');
+                        })
+                        ->whereNotIn('role_id', [1, 2, 5])
+                        ->count();
 
-                if ($existingStaffCount >= (int) $plan->user_limit) {
+                if ($existingStaffCount >= $staffLimit) {
                     return response()->json([
                         'status' => 'error',
-                        'message' => "Maximum staff limit of {$plan->user_limit} reached for your plan. Please upgrade your plan to add more staff.",
-                        'error' => "Maximum staff limit of {$plan->user_limit} reached for your plan."
+                        'message' => "Maximum staff limit of {$staffLimit} reached for your plan. Please upgrade your plan to add more staff.",
+                        'error' => "Maximum staff limit of {$staffLimit} reached for your plan."
                     ], 422);
                 }
             }

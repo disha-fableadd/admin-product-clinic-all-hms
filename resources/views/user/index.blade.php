@@ -108,9 +108,15 @@ table.dataTable {
                             </button>
 
                             @if (app('hasPermission')(3, 'create'))
-                                <a href="{{ route('user.create') }}" class="btn btn-rounded btn-hdr">
-                                    <i class="fa fa-plus"></i> <span class="hdr-btn-text">Add</span>
-                                </a>
+                                @if (function_exists('can_create_user') && !can_create_user())
+                                    <button type="button" class="btn btn-rounded btn-hdr" onclick="Swal.fire({ icon: 'warning', title: 'Staff Limit Reached', text: 'You have reached the maximum staff limit ({{ plan_user_limit() }}) allowed by your current subscription plan. Please upgrade your plan to add more staff.', confirmButtonColor: '#ff9f43' });" title="Plan staff limit reached">
+                                        <i class="fa fa-plus"></i> <span class="hdr-btn-text">Add</span>
+                                    </button>
+                                @else
+                                    <a href="{{ route('user.create') }}" class="btn btn-rounded btn-hdr">
+                                        <i class="fa fa-plus"></i> <span class="hdr-btn-text">Add</span>
+                                    </a>
+                                @endif
                             @endif
                         </div>
                         <div class="card-body ">

@@ -203,7 +203,7 @@ class PlanPermissionSyncService
             return ['allowed_module_ids' => [], 'synced_modules_count' => 0];
         }
 
-        if (!$plan) {
+        if (!$plan && Schema::hasTable('plans')) {
             $plan = Plan::where('is_active', 1)->latest('id')->first()
                 ?: Plan::latest('id')->first();
         }
@@ -216,10 +216,50 @@ class PlanPermissionSyncService
             $tModsList = array_values(array_filter(array_map('trim', (array)$tModsList)));
             if (!empty($tModsList)) {
                 $features = $tModsList;
-                if ($plan) {
+            }
+        }
+
+        // Keep local Plan entity synchronized with central admin_erp tenant specifications
+        if (function_exists('tenant') && tenant() && Schema::hasTable('plans')) {
+            $tenantUserLimit = tenant('user_limit') ?? tenant('max_user');
+            $tenantBranchLimit = tenant('branch_limit') ?? tenant('max_branch');
+            $tenantPlanName = tenant('plan_name') ?: 'Business plan';
+            $tenantExpiry = tenant('expiry_date') ?? tenant('end_date');
+            $tenantStart = tenant('start_date');
+
+            if (!$plan) {
+                try {
+                    $plan = Plan::create([
+                        'name' => $tenantPlanName,
+                        'user_limit' => ($tenantUserLimit !== null && $tenantUserLimit !== '') ? (int) $tenantUserLimit : null,
+                        'branch_limit' => ($tenantBranchLimit !== null && $tenantBranchLimit !== '') ? (int) $tenantBranchLimit : null,
+                        'start_date' => $tenantStart,
+                        'end_date' => $tenantExpiry,
+                        'is_active' => 1,
+                        'features' => $features,
+                    ]);
+                } catch (\Throwable $e) {}
+            } else {
+                $planUpdates = [];
+                if ($features !== null && $plan->features != $features) {
+                    $planUpdates['features'] = $features;
+                }
+                if ($tenantUserLimit !== null && $tenantUserLimit !== '' && (int)$plan->user_limit !== (int)$tenantUserLimit) {
+                    $planUpdates['user_limit'] = (int) $tenantUserLimit;
+                }
+                if ($tenantBranchLimit !== null && $tenantBranchLimit !== '' && (int)$plan->branch_limit !== (int)$tenantBranchLimit) {
+                    $planUpdates['branch_limit'] = (int) $tenantBranchLimit;
+                }
+                if ($tenantExpiry && $plan->end_date != $tenantExpiry) {
+                    $planUpdates['end_date'] = $tenantExpiry;
+                }
+                if ($tenantPlanName && $plan->name !== $tenantPlanName) {
+                    $planUpdates['name'] = $tenantPlanName;
+                }
+                if (!empty($planUpdates)) {
                     try {
-                        $plan->update(['features' => $features]);
-                    } catch (\Throwable) {}
+                        $plan->update($planUpdates);
+                    } catch (\Throwable $e) {}
                 }
             }
         }
@@ -332,6 +372,12 @@ class PlanPermissionSyncService
                         ],
                         $record
                     );
+                }
+
+                if ($plan && empty($adminUser->plan_id) && Schema::hasColumn($userTable, 'plan_id')) {
+                    try {
+                        DB::table($userTable)->where('id', $adminUser->id)->update(['plan_id' => $plan->id]);
+                    } catch (\Throwable $e) {}
                 }
             }
         }
