@@ -928,7 +928,6 @@
                         </div>
                     </div>
 
-                    </div>
                     @endif
 
                     @if ($showAdminCal)
@@ -1090,7 +1089,6 @@
                         </div>
                     </div>
 
-                    </div>
                     @endif
 
                     @if ($showAdminNewPatients)
