@@ -1295,9 +1295,15 @@
 
                 </div>
 
+                @php
+                    $showDocUpcomingAppt = tenant_has_module('Appointments') && (app('hasPermission')(1, 'view') || app('hasPermission')(29, 'view'));
+                    $showDocCal = tenant_has_module(['Appointments', 'Calendar']);
+                @endphp
+                @if ($showDocUpcomingAppt || $showDocCal)
                 <div class="row calender-apointment align-items-stretch">
 
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-7 d-flex flex-column">
+                    @if ($showDocUpcomingAppt)
+                    <div class="col-12 col-md-12 {{ $showDocCal ? 'col-lg-12 col-xl-7' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
                         <div class="card flex-fill h-100 d-flex flex-column">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
@@ -1448,8 +1454,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-5">
+                    @if ($showDocCal)
+                    <div class="col-12 col-md-12 {{ $showDocUpcomingAppt ? 'col-lg-12 col-xl-5' : 'col-lg-12 col-xl-12' }}">
                         <div class="card calender-card ">
 
 
@@ -1488,12 +1496,13 @@
                 @endif
 
                 @php
-                    $showAdminApptChart = tenant_has_module('Appointments');
-                    $showAdminNewPatients = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(28, 'view'));
+                    $showDocApptChart = tenant_has_module('Appointments');
+                    $showDocNewPatients = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(28, 'view'));
                 @endphp
-                @if ($showAdminApptChart || $showAdminNewPatients)
+                @if ($showDocApptChart || $showDocNewPatients)
                 <div class="row dashboard-charts-row align-items-stretch">
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-6 d-flex flex-column">
+                    @if ($showDocApptChart)
+                    <div class="col-12 col-md-12 {{ $showDocNewPatients ? 'col-lg-12 col-xl-6' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
                         <div class="card flex-fill h-100 d-flex flex-column">
                             <div class="card-body height-card flex-fill d-flex flex-column">
                                 <div class="chart-title">
@@ -1624,7 +1633,10 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-6 d-flex flex-column">
+                    @endif
+
+                    @if ($showDocNewPatients)
+                    <div class="col-12 col-md-12 {{ $showDocApptChart ? 'col-lg-12 col-xl-6' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
                         <div class="card flex-fill h-100 d-flex flex-column">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-user icon-style1"></i> New Patients
@@ -1733,12 +1745,10 @@
                             </div>
                         </div>
                     </div>
-
-
-
-
+                    @endif
 
                 </div>
+                @endif
 
             </div>
         @endif
