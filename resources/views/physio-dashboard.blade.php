@@ -579,6 +579,7 @@
             <div class="content">
                 <div class="row about-padding">
 
+                    @if (tenant_has_module('Followup') && app('hasPermission')(2, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('followup.index') }}">
                             <div class="dash-widget2">
@@ -586,12 +587,13 @@
                                 <div class="dash-widget-info text-right">
                                     <span class="widget-title2">Today Followup </span>
                                     <h3 class="total-users-count text-dark">0</h3>
-
                                 </div>
                             </div>
                         </a>
                     </div>
+                    @endif
 
+                    @if (tenant_has_module('Appointments') && app('hasPermission')(1, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('appointment.index') }}">
                             <div class="dash-widget1">
@@ -603,8 +605,9 @@
                             </div>
                         </a>
                     </div>
+                    @endif
 
-
+                    @if (tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(5, 'create') || app('hasPermission')(35, 'view') || app('hasPermission')(36, 'view')))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('patients.index') }}">
                             <div class="dash-widget2">
@@ -612,7 +615,6 @@
                                 <div class="dash-widget-info text-right">
                                     <span class="widget-title2">Today Home Patient </span>
                                     <h3 class="home_patient text-dark">0</h3>
-
                                 </div>
                             </div>
                         </a>
@@ -625,15 +627,13 @@
                                 <div class="dash-widget-info text-right">
                                     <span class="widget-title3">Today Cosmetic Patient </span>
                                     <h3 class="cosmatic_patient text-dark">0</h3>
-
                                 </div>
                             </div>
                         </a>
                     </div>
+                    @endif
 
-                </div>
-
-                <div class="row about-padding">
+                    @if (tenant_has_module(['Patients', 'IPD']))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('patients.index') }}">
                             <div class="dash-widget1">
@@ -645,7 +645,9 @@
                             </div>
                         </a>
                     </div>
+                    @endif
 
+                    @if (tenant_has_module('Expenses') && (app('hasPermission')(22, 'view') || app('hasPermission')(5, 'view')))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('expense.index') }}">
                             <div class="dash-widget2">
@@ -657,7 +659,9 @@
                             </div>
                         </a>
                     </div>
+                    @endif
 
+                    @if (tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(5, 'create') || app('hasPermission')(35, 'view') || app('hasPermission')(36, 'view')))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('patients.index') }}">
                             <div class="dash-widget1">
@@ -669,7 +673,9 @@
                             </div>
                         </a>
                     </div>
+                    @endif
 
+                    @if (tenant_has_module('Staffs') && app('hasPermission')(3, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="#">
                             <div class="dash-widget2">
@@ -681,6 +687,8 @@
                             </div>
                         </a>
                     </div>
+                    @endif
+
                 </div>
 
 
