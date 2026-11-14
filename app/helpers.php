@@ -314,4 +314,71 @@ if (! function_exists('hms_user_profile')) {
     }
 }
 
+if (! function_exists('plan_user_limit')) {
+    /**
+     * Get the maximum allowed staff users for the current tenant / active plan.
+     */
+    function plan_user_limit(): ?int
+    {
+        if (function_exists('tenant') && tenant()) {
+            $limit = tenant('user_limit') ?? tenant('max_user');
+            if ($limit !== null && $limit !== '' && is_numeric($limit)) {
+                return (int) $limit;
+            }
+        }
+
+        try {
+            $user = auth()->user();
+            if ($user && $user->plan_id) {
+                $plan = \App\Models\Plan::find($user->plan_id);
+                if ($plan && $plan->user_limit !== null && is_numeric($plan->user_limit)) {
+                    return (int) $plan->user_limit;
+                }
+            }
+
+            $plan = \App\Models\Plan::where('is_active', 1)->latest('id')->first()
+                ?: \App\Models\Plan::latest('id')->first();
+            if ($plan && $plan->user_limit !== null && is_numeric($plan->user_limit)) {
+                return (int) $plan->user_limit;
+            }
+        } catch (\Throwable $e) {}
+
+        return null;
+    }
+}
+
+if (! function_exists('current_staff_count')) {
+    /**
+     * Get the current count of staff users (excluding SuperAdmin 1, Admin 2, Patient 5).
+     */
+    function current_staff_count(): int
+    {
+        try {
+            return \App\Models\User::where(function ($q) {
+                    $q->where('is_deleted', 0)->orWhereNull('is_deleted');
+                })
+                ->whereNotIn('role_id', [1, 2, 5])
+                ->count();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+}
+
+if (! function_exists('can_create_user')) {
+    /**
+     * Check if a new staff member can be created under the current tenant / plan limit.
+     */
+    function can_create_user(): bool
+    {
+        $limit = plan_user_limit();
+        if ($limit === null || $limit <= 0) {
+            return true; // unlimited
+        }
+
+        return current_staff_count() < $limit;
+    }
+}
+
+
 

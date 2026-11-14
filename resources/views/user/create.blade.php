@@ -176,6 +176,15 @@
                     <form class="form-container all-form" id="multiStepForm" method="POST" action="">
                         @csrf
 
+                        @if (function_exists('can_create_user') && !can_create_user())
+                            <div class="alert alert-warning d-flex align-items-center mb-4" role="alert" style="border-radius: 12px; font-size: 14px; background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404;">
+                                <i class="fas fa-exclamation-triangle mr-2 me-2" style="font-size: 20px;"></i>
+                                <div>
+                                    <strong>Staff Limit Reached:</strong> You have reached the maximum staff limit ({{ plan_user_limit() }}) allowed by your current plan. Please upgrade your plan to add more staff.
+                                </div>
+                            </div>
+                        @endif
+
                         <input type="hidden" name="branch_id" id="branch_id">
                         <!-- Step 1: Personal Information -->
                         <div class="form-step" id="step-1">
@@ -735,6 +744,16 @@
                     });
 
                     formData.append('permissions', JSON.stringify(permissions));
+
+                    @if (function_exists('can_create_user') && !can_create_user())
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Staff Limit Reached',
+                        text: 'You have reached the maximum staff limit ({{ plan_user_limit() }}) allowed by your current plan. Please upgrade your plan to add more staff.',
+                        confirmButtonColor: '#ff9f43'
+                    });
+                    return false;
+                    @endif
 
                     // **Show SweetAlert loader**
                     Swal.fire({
