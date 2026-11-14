@@ -975,28 +975,36 @@ class UserController extends Controller
                 $adminName = DB::table('user')->where('role_id', 2)->value('fullname');
 
                 // WhatsApp welcome message
-                $whatsapp = new WhatsAppService();
-                $whatsapp->sendWelcomeTemplate(
-                    $phone,
-                    $user->fullname,
-                    $clinicName,
-                    $user->email,
-                    $adminName
-                );
+                try {
+                    $whatsapp = new WhatsAppService();
+                    $whatsapp->sendWelcomeTemplate(
+                        $phone,
+                        $user->fullname,
+                        $clinicName,
+                        $user->email,
+                        $adminName
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('⚠️ WhatsApp welcome notification skipped: ' . $e->getMessage());
+                }
 
                 // SMS welcome message
-                $smsMessage = "Welcome onboard, {$user->fullname}! 🎉\n"
-                    . "Your account at {$clinicName} is created.\n"
-                    . "Email: {$user->email}\n"
-                    . "Password: {$request->password}\n"
-                    . "Admin: {$adminName}";
+                try {
+                    $smsMessage = "Welcome onboard, {$user->fullname}! 🎉\n"
+                        . "Your account at {$clinicName} is created.\n"
+                        . "Email: {$user->email}\n"
+                        . "Password: {$request->password}\n"
+                        . "Admin: {$adminName}";
 
-                $smsService = new SmsService();
-                $smsResponse = $smsService->send_sms($user->phone, $smsMessage);
-                if ($smsResponse) {
-                    Log::info("✅ SMS sent successfully to {$user->phone}");
-                } else {
-                    Log::error("❌ Failed to send SMS to {$user->phone}");
+                    $smsService = new SmsService();
+                    $smsResponse = $smsService->send_sms($user->phone, $smsMessage);
+                    if ($smsResponse) {
+                        Log::info("✅ SMS sent successfully to {$user->phone}");
+                    } else {
+                        Log::info("ℹ️ SMS not sent to {$user->phone}");
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('⚠️ SMS welcome notification skipped: ' . $e->getMessage());
                 }
             }
 
