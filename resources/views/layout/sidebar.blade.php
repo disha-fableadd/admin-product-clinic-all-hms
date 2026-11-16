@@ -27,6 +27,73 @@
         'setting.*', 'settings.*', 'taxrate.*', 'plans.*', 'email.*', 'sms.*', 'calender.*', 'knowledge.*', 'profile'
     );
 
+    $currentUser = auth()->user();
+    $isAdmin = $currentUser && ((string)$currentUser->role_id === '2' || (int)$currentUser->role_id === 1 || strtolower(optional($currentUser->role)->name ?? '') === 'admin');
+
+    // Dashboard Permission
+    $hasDashboardPerm = tenant_has_module('Dashboard') && ($isAdmin || app('hasPermission')(1, 'view'));
+
+    // ERP / HMS Modules Permissions
+    $hasPatientPerm = tenant_has_module('Patients') && ($isAdmin || app('hasPermission')(5, 'view') || app('hasPermission')(5, 'create') || app('hasPermission')(35, 'view') || app('hasPermission')(36, 'view'));
+    $hasAppointmentPerm = tenant_has_module('Appointments') && ($isAdmin || app('hasPermission')(6, 'view') || app('hasPermission')(6, 'create'));
+    $hasMedicinePerm = tenant_has_module('Medicines') && ($isAdmin || app('hasPermission')(4, 'view') || app('hasPermission')(4, 'create'));
+    $hasFollowupPerm = tenant_has_module('Followup') && ($isAdmin || app('hasPermission')(2, 'view') || app('hasPermission')(2, 'create'));
+    $hasStaffPerm = tenant_has_module('Staffs') && ($isAdmin || app('hasPermission')(3, 'view') || app('hasPermission')(3, 'create'));
+    $hasSalePerm = tenant_has_module('Sale Bill') && ($isAdmin || app('hasPermission')(20, 'view') || app('hasPermission')(18, 'view'));
+    $hasPurchasePerm = tenant_has_module('Purchase Bill') && ($isAdmin || app('hasPermission')(21, 'view') || app('hasPermission')(11, 'view'));
+    $hasVendorPerm = tenant_has_module('Vendors') && ($isAdmin || app('hasPermission')(24, 'view') || app('hasPermission')(12, 'view'));
+    $hasTreatmentPerm = tenant_has_module('Treatments') && ($isAdmin || app('hasPermission')(9, 'view') || app('hasPermission')(7, 'view') || app('hasPermission')(10, 'view'));
+
+    $showErpSection = $isAdmin
+        ? tenant_has_module(['Patients', 'Appointments', 'Medicines', 'Followup', 'Staffs', 'Sale Bill', 'Purchase Bill', 'Vendors', 'Treatments'])
+        : ($hasPatientPerm || $hasAppointmentPerm || $hasMedicinePerm || $hasFollowupPerm || $hasStaffPerm || $hasSalePerm || $hasPurchasePerm || $hasVendorPerm || $hasTreatmentPerm);
+
+    // Clinical Services Permissions
+    $hasOpdPerm = tenant_has_module('OPD') && ($isAdmin || app('hasPermission')(13, 'view') || app('hasPermission')(23, 'view'));
+    $hasIpdPerm = tenant_has_module('IPD') && ($isAdmin || app('hasPermission')(14, 'view') || app('hasPermission')(25, 'view'));
+    $hasDailyRegisterPerm = tenant_has_module('Daily Register') && ($isAdmin || app('hasPermission')(30, 'view') || app('hasPermission')(28, 'view'));
+    $hasTherapyPerm = tenant_has_module('Therapy') && ($isAdmin || app('hasPermission')(29, 'view') || app('hasPermission')(26, 'view') || app('hasPermission')(27, 'view'));
+    $hasDietChartPerm = tenant_has_module('Diet Chart') && ($isAdmin || app('hasPermission')(34, 'view'));
+    $hasClinicalNotesPerm = tenant_has_module('Clinical Notes') && ($isAdmin || app('hasPermission')(28, 'view') || app('hasPermission')(27, 'view') || app('hasPermission')(31, 'view') || app('hasPermission')(32, 'view') || app('hasPermission')(33, 'view'));
+    $hasDiagnosticServicePerm = tenant_has_module('Diagnostic Service') && ($isAdmin || app('hasPermission')(17, 'view') || app('hasPermission')(18, 'view') || app('hasPermission')(19, 'view') || app('hasPermission')(8, 'view'));
+    $hasMedicalReportPerm = tenant_has_module('Medical Report') && ($isAdmin || app('hasPermission')(25, 'view') || app('hasPermission')(13, 'view'));
+    $hasOtDischargePerm = tenant_has_module('OT & Discharge') && ($isAdmin || app('hasPermission')(15, 'view') || app('hasPermission')(16, 'view') || app('hasPermission')(10, 'view') || app('hasPermission')(24, 'view'));
+
+    $showClinicalSection = $isAdmin
+        ? tenant_has_module(['OPD', 'IPD', 'Daily Register', 'Therapy', 'Diet Chart', 'Clinical Notes', 'Diagnostic Service', 'Medical Report', 'OT & Discharge', 'Clinical Services'])
+        : ($hasOpdPerm || $hasIpdPerm || $hasDailyRegisterPerm || $hasTherapyPerm || $hasDietChartPerm || $hasClinicalNotesPerm || $hasDiagnosticServicePerm || $hasMedicalReportPerm || $hasOtDischargePerm);
+
+    // Accounting Permissions
+    $hasAccountLedgerPerm = tenant_has_module('Account Ledger') && ($isAdmin || app('hasPermission')(31, 'view'));
+    $hasInventoryPerm = tenant_has_module('Stock / Inventory') && ($isAdmin || app('hasPermission')(23, 'view') || app('hasPermission')(11, 'view'));
+    $hasExpensePerm = tenant_has_module('Expenses') && ($isAdmin || app('hasPermission')(22, 'view'));
+    $hasInvoicePerm = tenant_has_module('Invoices') && ($isAdmin || app('hasPermission')(26, 'view') || app('hasPermission')(18, 'view'));
+
+    $showAccountingSection = $isAdmin
+        ? tenant_has_module(['Account Ledger', 'Stock / Inventory', 'Expenses', 'Invoices', 'Accounting'])
+        : ($hasAccountLedgerPerm || $hasInventoryPerm || $hasExpensePerm || $hasInvoicePerm);
+
+    // Reports Permissions
+    $hasSalesReportPerm = tenant_has_module(['Sales Report', 'sales-report', 'Reports', 'Report']) && ($isAdmin || app('hasPermission')(37, 'view') || app('hasPermission')(14, 'view'));
+    $hasPurchaseReportPerm = tenant_has_module(['Purchase Report', 'purchase-report', 'Reports', 'Report']) && ($isAdmin || app('hasPermission')(38, 'view') || app('hasPermission')(14, 'view'));
+    $hasExpenseReportPerm = tenant_has_module(['Expense Report', 'expense-report', 'Expenses Report', 'Reports', 'Report']) && ($isAdmin || app('hasPermission')(39, 'view') || app('hasPermission')(14, 'view'));
+    $hasAnalyticsPerm = tenant_has_module(['Analytics & Summary', 'Reports', 'Report']) && ($isAdmin || app('hasPermission')(32, 'view') || app('hasPermission')(40, 'view') || app('hasPermission')(14, 'view'));
+
+    $showReportsSection = $isAdmin
+        ? tenant_has_module(['Sales Report', 'Purchase Report', 'Expense Report', 'Analytics & Summary', 'Reports', 'Report'])
+        : ($hasSalesReportPerm || $hasPurchaseReportPerm || $hasExpenseReportPerm || $hasAnalyticsPerm);
+
+    // Settings Permissions
+    $hasSettingsItemPerm = tenant_has_module('Settings') && ($isAdmin || app('hasPermission')(15, 'view') || app('hasPermission')(16, 'view'));
+    $hasTaxRatesPerm = tenant_has_module('Tax Rates') && ($isAdmin || app('hasPermission')(35, 'view') || app('hasPermission')(21, 'view')) && Route::has('taxrate.index');
+    $hasPlansPerm = $isAdmin && tenant_has_module('My Plan Details') && Route::has('plans.myplan');
+    $hasCalendarPerm = tenant_has_module('Calendar') && ($isAdmin || app('hasPermission')(9, 'view')) && Route::has('calender.index');
+    $hasKnowledgePerm = tenant_has_module('Knowledge Base') && ($isAdmin || app('hasPermission')(14, 'view')) && Route::has('knowledge.index');
+
+    $showSettingsSection = $isAdmin
+        ? (tenant_has_module(['Settings', 'Tax Rates', 'My Plan Details', 'Calendar', 'Knowledge Base']) || true)
+        : ($hasSettingsItemPerm || $hasTaxRatesPerm || $hasPlansPerm || $hasCalendarPerm || $hasKnowledgePerm);
+
     // Default first menu (HMS Modules / ERP) to active and open on dashboard or refresh when no other category is active
     // NOTE: Explicitly exclude report routes so they don't trigger ERP section
     $isErpActive = (request()->routeIs(
@@ -37,15 +104,7 @@
         'sales.*', 'purchase.*',
         'supplier.*', 'vendor.*',
         'user.*'
-    ) && !$isReportsActive) || $isDashboardActive || (!$isClinicalActive && !$isAccountingActive && !$isReportsActive && !$isSettingsActive);
-
-    $showErpSection = tenant_has_module(['Patients', 'Appointments', 'Medicines', 'Followup', 'Staffs', 'Sale Bill', 'Purchase Bill', 'Vendors', 'Treatments']);
-    $showClinicalSection = tenant_has_module(['OPD', 'IPD', 'Daily Register', 'Therapy', 'Diet Chart', 'Clinical Notes', 'Diagnostic Service', 'Medical Report', 'OT & Discharge', 'Clinical Services']);
-    $showAccountingSection = tenant_has_module(['Account Ledger', 'Stock / Inventory', 'Expenses', 'Invoices', 'Accounting']);
-    $showReportsSection = tenant_has_module(['Sales Report', 'Purchase Report', 'Expense Report', 'Analytics & Summary', 'Reports', 'Report']);
-    $showSettingsSection = tenant_has_module(['Settings', 'Tax Rates', 'My Plan Details', 'Calendar', 'Knowledge Base']) || true;
-
-    $hasPatientPerm = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(5, 'create') || app('hasPermission')(35, 'view') || app('hasPermission')(36, 'view'));
+    ) && !$isReportsActive) || ($showErpSection && ($isDashboardActive || (!$isClinicalActive && !$isAccountingActive && !$isReportsActive && !$isSettingsActive)));
 @endphp
 
 <div class="sidebar" id="sidebar">
@@ -332,7 +391,7 @@
 
             <ul>
                 {{-- 1. DASHBOARD --}}
-                @if (tenant_has_module('Dashboard'))
+                @if ($hasDashboardPerm)
                 <li class="sidebar-category sidebar-category-dashboard {{ $isDashboardActive ? 'active' : '' }}">
                     <a href="{{ route('dashboard') }}" class="{{ $isDashboardActive ? 'active' : '' }}">
                         <i class="fas fa-tachometer-alt text-danger"></i>
@@ -427,7 +486,7 @@
                         @endif
 
                          {{-- Medicines --}}
-                        @if (tenant_has_module('Medicines') && (app('hasPermission')(1, 'view') || app('hasPermission')(4, 'view')))
+                        @if ($hasMedicinePerm)
                             <li class="submenu sidebar-module {{ request()->routeIs('medicine.*', 'category.*', 'brand.*', 'medicine_unit.*', 'symptoms.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('medicine.*', 'category.*', 'brand.*', 'medicine_unit.*', 'symptoms.*') ? 'subdrop active' : '' }}">
                                     <i class="fa fa-pills icons"></i>
@@ -441,7 +500,7 @@
                                             <span>All Medicines</span>
                                         </a>
                                     </li>
-                                    @if (app('hasPermission')(1, 'create'))
+                                    @if ($isAdmin || app('hasPermission')(4, 'create'))
                                         <li class="{{ request()->routeIs('medicine.create') ? 'active' : '' }}">
                                             <a href="{{ route('medicine.create') }}" class="{{ request()->routeIs('medicine.create') ? 'active' : '' }}">
                                                 <i class="fa fa-plus-circle icons"></i>
@@ -974,7 +1033,7 @@
                 @endif
 
                 {{-- 4. ACCOUNTING (Includes Account Ledger, Stock / Inventory, Expenses, Invoices) --}}
-                @if ($showAccountingSection && (app('hasPermission')(22, 'view') || app('hasPermission')(23, 'view') || app('hasPermission')(26, 'view') || app('hasPermission')(31, 'view')))
+                @if ($showAccountingSection)
                     <li class="submenu sidebar-category sidebar-category-accounting {{ $isAccountingActive ? 'active' : '' }}">
                         <a href="javascript:void(0);" class="{{ $isAccountingActive ? 'subdrop active' : '' }}">
                             <i class="fas fa-calculator text-success"></i>
@@ -983,7 +1042,7 @@
                         </a>
                         <ul style="{{ $isAccountingActive ? 'display: block;' : 'display: none;' }}">
                             {{-- Account Ledger --}}
-                            @if (tenant_has_module('Account Ledger') && app('hasPermission')(31, 'view'))
+                            @if ($hasAccountLedgerPerm)
                                 <li class="sidebar-module {{ request()->routeIs('account_ledger.*') ? 'active' : '' }}">
                                     <a href="{{ route('account_ledger.index') }}" class="{{ request()->routeIs('account_ledger.index') ? 'active' : '' }}">
                                         <i class="fas fa-book icons"></i>
@@ -993,7 +1052,7 @@
                             @endif
 
                             {{-- Stock / Inventory (Moved to Accounting per instruction) --}}
-                            @if (tenant_has_module('Stock / Inventory') && (app('hasPermission')(23, 'view') || app('hasPermission')(11, 'view')))
+                            @if ($hasInventoryPerm)
                                 <li class="sidebar-module {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
                                     <a href="{{ route('inventory.index') }}" class="{{ request()->routeIs('inventory.index') ? 'active' : '' }}">
                                         <i class="fas fa-warehouse icons"></i>
@@ -1003,7 +1062,7 @@
                             @endif
 
                             {{-- Expenses --}}
-                            @if (tenant_has_module('Expenses') && (app('hasPermission')(22, 'view') || app('hasPermission')(5, 'view')))
+                            @if ($hasExpensePerm)
                                 <li class="submenu sidebar-module {{ request()->routeIs('expense.*') ? 'active' : '' }}">
                                     <a href="javascript:void(0);" class="{{ request()->routeIs('expense.*') ? 'subdrop active' : '' }}">
                                         <i class="fas fa-money-bill-wave icons"></i>
@@ -1017,7 +1076,7 @@
                                                 <span>All Expenses</span>
                                             </a>
                                         </li>
-                                        @if (app('hasPermission')(22, 'create'))
+                                        @if ($isAdmin || app('hasPermission')(22, 'create'))
                                             <li class="{{ request()->routeIs('expense.create') ? 'active' : '' }}">
                                                 <a href="{{ route('expense.create') }}" class="{{ request()->routeIs('expense.create') ? 'active' : '' }}">
                                                     <i class="fa fa-plus-circle icons"></i>
@@ -1030,7 +1089,7 @@
                             @endif
 
                             {{-- Invoices --}}
-                            @if (tenant_has_module('Invoices') && (app('hasPermission')(26, 'view') || app('hasPermission')(18, 'view')))
+                            @if ($hasInvoicePerm)
                                 <li class="sidebar-module {{ request()->routeIs('invoice.*') ? 'active' : '' }}">
                                     <a href="{{ route('invoice.index') }}" class="{{ request()->routeIs('invoice.index') ? 'active' : '' }}">
                                         <i class="fas fa-file-invoice-dollar icons"></i>
@@ -1051,7 +1110,7 @@
                         <span class="menu-arrow"></span>
                     </a>
                     <ul style="{{ $isReportsActive ? 'display: block;' : 'display: none;' }}">
-                        @if (tenant_has_module(['Sales Report', 'sales-report', 'Reports', 'Report']))
+                        @if ($hasSalesReportPerm)
                             <li class="sidebar-module {{ request()->routeIs('sales.report') || request()->is('sales-report*') ? 'active' : '' }}">
                                 <a href="{{ Route::has('sales.report') ? route('sales.report') : url('/sales-report') }}" class="{{ request()->routeIs('sales.report') || request()->is('sales-report*') ? 'active' : '' }}">
                                     <i class="fa fa-chart-bar icons"></i>
@@ -1059,7 +1118,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module(['Purchase Report', 'purchase-report', 'Reports', 'Report']))
+                        @if ($hasPurchaseReportPerm)
                             <li class="sidebar-module {{ request()->routeIs('purchase.report') || request()->is('purchase-report*') ? 'active' : '' }}">
                                 <a href="{{ Route::has('purchase.report') ? route('purchase.report') : url('/purchase-report') }}" class="{{ request()->routeIs('purchase.report') || request()->is('purchase-report*') ? 'active' : '' }}">
                                     <i class="fa fa-chart-pie icons"></i>
@@ -1067,7 +1126,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module(['Expense Report', 'expense-report', 'Expenses Report', 'Reports', 'Report']))
+                        @if ($hasExpenseReportPerm)
                             <li class="sidebar-module {{ request()->routeIs('expense.report') || request()->is('expense-report*') ? 'active' : '' }}">
                                 <a href="{{ Route::has('expense.report') ? route('expense.report') : url('/expense-report') }}" class="{{ request()->routeIs('expense.report') || request()->is('expense-report*') ? 'active' : '' }}">
                                     <i class="fa fa-file-invoice-dollar icons"></i>
@@ -1075,7 +1134,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module(['Analytics & Summary', 'Reports', 'Report']) && (app('hasPermission')(32, 'view') || app('hasPermission')(40, 'view') || app('hasPermission')(14, 'view') || (auth()->user() && in_array((string)auth()->user()->role_id, ['1', '2']))))
+                        @if ($hasAnalyticsPerm)
                             <li class="sidebar-module {{ request()->routeIs('chart') || request()->is('chart*') ? 'active' : '' }}">
                                 <a href="{{ Route::has('chart') ? route('chart') : url('/chart') }}" class="{{ request()->routeIs('chart') || request()->is('chart*') ? 'active' : '' }}">
                                     <i class="fa fa-chart-area icons"></i>
@@ -1089,6 +1148,7 @@
                 @endif
 
                 {{-- 6. SETTINGS --}}
+                @if ($showSettingsSection)
                 <li class="submenu sidebar-category sidebar-category-settings {{ $isSettingsActive ? 'active' : '' }}">
                     <a href="javascript:void(0);" class="{{ $isSettingsActive ? 'subdrop active' : '' }}">
                         <i class="fas fa-cog text-info"></i>
@@ -1096,7 +1156,7 @@
                         <span class="menu-arrow"></span>
                     </a>
                     <ul style="{{ $isSettingsActive ? 'display: block;' : 'display: none;' }}">
-                        @if (tenant_has_module('Settings') && (app('hasPermission')(4, 'view') || app('hasPermission')(15, 'view')))
+                        @if ($hasSettingsItemPerm)
                             <li class="sidebar-module {{ request()->routeIs('sms.template') ? 'active' : '' }}">
                                 <a href="{{ route('sms.template') }}" class="{{ request()->routeIs('sms.template') ? 'active' : '' }}">
                                     <i class="fa fa-store icons"></i>
@@ -1104,7 +1164,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module('Tax Rates') && (app('hasPermission')(21, 'view') || app('hasPermission')(35, 'view')) && Route::has('taxrate.index'))
+                        @if ($hasTaxRatesPerm)
                             <li class="sidebar-module {{ request()->routeIs('taxrate.index') ? 'active' : '' }}">
                                 <a href="{{ route('taxrate.index') }}" class="{{ request()->routeIs('taxrate.index') ? 'active' : '' }}">
                                     <i class="fa fa-percent icons"></i>
@@ -1112,7 +1172,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (tenant_has_module('My Plan Details') && Route::has('plans.myplan'))
+                        @if ($hasPlansPerm)
                             <li class="sidebar-module {{ request()->routeIs('plans.myplan') ? 'active' : '' }}">
                                 <a href="{{ route('plans.myplan') }}" class="{{ request()->routeIs('plans.myplan') ? 'active' : '' }}">
                                     <i class="fa fa-crown icons"></i>
@@ -1121,7 +1181,7 @@
                             </li>
                         @endif
                      
-                        @if (tenant_has_module('Calendar') && Route::has('calender.index'))
+                        @if ($hasCalendarPerm)
                             <li class="sidebar-module {{ request()->routeIs('calender.index') ? 'active' : '' }}">
                                 <a href="{{ route('calender.index') }}" class="{{ request()->routeIs('calender.index') ? 'active' : '' }}">
                                     <i class="fa fa-calendar-alt icons"></i>
@@ -1129,7 +1189,7 @@
                                 </a>
                             </li>
                         @endif
-                        @if (Route::has('knowledge.index') && tenant_has_module('Knowledge Base'))
+                        @if ($hasKnowledgePerm)
                         <li class="sidebar-module {{ request()->routeIs('knowledge.index') ? 'active' : '' }}">
                                 <a href="{{ route('knowledge.index') }}" class="{{ request()->routeIs('knowledge.index') ? 'active' : '' }}">
                                     <i class="fa fa-book-open icons"></i>
@@ -1158,6 +1218,7 @@
                         @endif
                     </ul>
                 </li>
+                @endif
 
             </ul>
         </div>
