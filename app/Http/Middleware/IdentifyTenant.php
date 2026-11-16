@@ -56,7 +56,15 @@ class IdentifyTenant
                     \Illuminate\Support\Facades\Auth::setUser($user);
                     if (!empty($user->email)) {
                         $forceFresh = $request->has('refresh_tenant') || $request->has('refresh_permissions');
-                        $tenant = $this->tenancy->resolveByEmail($user->email, $forceFresh);
+                        try {
+                            $tenant = $this->tenancy->resolveByEmail($user->email, $forceFresh);
+                        } catch (TenantResolutionException $e) {
+                            if ($request->hasSession() && $request->session()->has('tenant_id')) {
+                                $tenant = $this->tenancy->resolveById((int) $request->session()->get('tenant_id'), $forceFresh);
+                            } else {
+                                throw $e;
+                            }
+                        }
                         if ($request->hasSession()) {
                             $request->session()->put('tenant_id', $tenant['id']);
                             $request->session()->put('tenant', $tenant);
@@ -118,7 +126,15 @@ class IdentifyTenant
             if ($user && !empty($user->email)) {
                 try {
                     $forceFresh = $request->has('refresh_tenant') || $request->has('refresh_permissions');
-                    $tenant = $this->tenancy->resolveByEmail($user->email, $forceFresh);
+                    try {
+                        $tenant = $this->tenancy->resolveByEmail($user->email, $forceFresh);
+                    } catch (TenantResolutionException $e) {
+                        if ($request->hasSession() && $request->session()->has('tenant_id')) {
+                            $tenant = $this->tenancy->resolveById((int) $request->session()->get('tenant_id'), $forceFresh);
+                        } else {
+                            throw $e;
+                        }
+                    }
                     $request->session()->put('tenant_id', $tenant['id']);
                     $request->session()->put('tenant', $tenant);
 
