@@ -384,12 +384,20 @@ class AuthController extends Controller
         'show_today_appointment_modal' => true
     ];
 
+    // Preserve existing tenant in session if set by ensureTenantAllowsLogin
+    if ($request->hasSession() && $request->session()->has('tenant_id')) {
+        $sessionData['tenant_id'] = $request->session()->get('tenant_id');
+        $sessionData['tenant'] = $request->session()->get('tenant');
+    }
+
     try {
         $tenantManager = app(\App\Services\Tenancy\TenantManager::class);
         if ($tenantManager->enabled() && !empty($user->email)) {
             $tenant = $tenantManager->resolveByEmail($user->email);
-            $sessionData['tenant_id'] = $tenant['id'];
-            $sessionData['tenant'] = $tenant;
+            if ($tenant) {
+                $sessionData['tenant_id'] = $tenant['id'];
+                $sessionData['tenant'] = $tenant;
+            }
         }
     } catch (\Throwable $e) {
         \Illuminate\Support\Facades\Log::warning('Tenant resolve during login failed: ' . $e->getMessage());
@@ -837,6 +845,37 @@ class AuthController extends Controller
                     }
                     return null;
                 } catch (\App\Exceptions\TenantResolutionException $userTenantError) {
+                    // Fallback for staff members: if central admin resolution returns NOT_FOUND,
+                    // check if user exists locally in tenant/default DB and resolve via the client admin
+                    if (in_array(strtoupper((string) $userTenantError->reason), ['NOT_FOUND', 'AMBIGUOUS'], true)) {
+                        try {
+                            $localUser = $this->findUserByLoginEmail($login);
+                            if ($localUser) {
+                                $adminUser = User::whereHas('role', function ($q) {
+                                        $q->whereRaw('LOWER(name) = ?', ['admin']);
+                                    })
+                                    ->where('id', '!=', $localUser->id)
+                                    ->first()
+                                    ?: User::where('id', 1)->first()
+                                    ?: User::whereNotNull('username')->where('username', '!=', '')->first();
+
+                                if ($adminUser && (!empty($adminUser->email) || !empty($adminUser->username))) {
+                                    $adminIdentifier = !empty($adminUser->email) ? $adminUser->email : $adminUser->username;
+                                    $tenant = $tenancy->resolveByEmail($adminIdentifier, true);
+                                    if ($request->hasSession()) {
+                                        $request->session()->put('tenant_id', $tenant['id']);
+                                        $request->session()->put('tenant', $tenant);
+                                    }
+                                    return null;
+                                }
+                            }
+                        } catch (\Throwable) {}
+
+                        if ($request->hasSession() && $request->session()->has('tenant_id')) {
+                            return null;
+                        }
+                    }
+
                     return $buildTenantErrorResponse($userTenantError);
                 }
             }
@@ -856,6 +895,35 @@ class AuthController extends Controller
                     }
                     return null;
                 } catch (\App\Exceptions\TenantResolutionException $userTenantError) {
+                    if (in_array(strtoupper((string) $userTenantError->reason), ['NOT_FOUND', 'AMBIGUOUS'], true)) {
+                        try {
+                            $localUser = $this->findUserByLoginEmail($login);
+                            if ($localUser) {
+                                $adminUser = User::whereHas('role', function ($q) {
+                                        $q->whereRaw('LOWER(name) = ?', ['admin']);
+                                    })
+                                    ->where('id', '!=', $localUser->id)
+                                    ->first()
+                                    ?: User::where('id', 1)->first()
+                                    ?: User::whereNotNull('username')->where('username', '!=', '')->first();
+
+                                if ($adminUser && (!empty($adminUser->email) || !empty($adminUser->username))) {
+                                    $adminIdentifier = !empty($adminUser->email) ? $adminUser->email : $adminUser->username;
+                                    $tenant = $tenancy->resolveByEmail($adminIdentifier, true);
+                                    if ($request->hasSession()) {
+                                        $request->session()->put('tenant_id', $tenant['id']);
+                                        $request->session()->put('tenant', $tenant);
+                                    }
+                                    return null;
+                                }
+                            }
+                        } catch (\Throwable) {}
+
+                        if ($request->hasSession() && $request->session()->has('tenant_id')) {
+                            return null;
+                        }
+                    }
+
                     return $buildTenantErrorResponse($userTenantError);
                 }
             }
