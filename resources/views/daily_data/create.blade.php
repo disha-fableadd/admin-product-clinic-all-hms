@@ -79,6 +79,10 @@
 
     }
 </style>
+@php
+    $user = Auth::user();
+    $isAdmin = $user && ((string)$user->role_id === '2' || (int)$user->role_id === 1 || strtolower(optional($user->role)->name ?? '') === 'admin');
+@endphp
 @section('content')
     <div class="page-wrapper">
         <div class="content">
@@ -86,7 +90,7 @@
                 <div class=" col-6">
                     <h4 class="page-title  daily_data-title">Add Daily Register</h4>
                 </div>
-                @if (app('hasPermission')(26, 'view'))
+                @if ($isAdmin || app('hasPermission')(28, 'view') || app('hasPermission')(30, 'view') || app('hasPermission')(26, 'view'))
                     <div class=" col-6 m-b-2 eye-btn daily_data-button">
                         <a href="{{ route('daily_data.index') }}" class="btn btn-primary btn-rounded btn-hdr">
                             <i class="fa fa-arrow-left m-r-5 icon3  "></i> <span class="hdr-btn-text">Back</span>
