@@ -712,7 +712,7 @@
                     </div>
                     @endif
 
-                    @if (tenant_has_module('Appointments') && app('hasPermission')(1, 'view'))
+                    @if (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('appointment.index') }}">
                             <div class="dash-widget1">
@@ -813,8 +813,8 @@
 
 
                 @php
-                    $showAdminUpcomingAppt = tenant_has_module('Appointments') && (app('hasPermission')(1, 'view') || app('hasPermission')(29, 'view'));
-                    $showAdminCal = tenant_has_module(['Appointments', 'Calendar']);
+                    $showAdminUpcomingAppt = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
+                    $showAdminCal = (tenant_has_module('Calendar') && app('hasPermission')(9, 'view')) || (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'));
                 @endphp
                 @if ($showAdminUpcomingAppt || $showAdminCal)
                 <div class="row calender-apointment align-items-stretch">
@@ -824,7 +824,7 @@
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i> Upcoming Appointments</h4>
-                                @if (app('hasPermission')(29, 'view'))
+                                @if (app('hasPermission')(6, 'view'))
                                     <a href="{{ route('appointment.index') }}"
                                         class="btn btn-primary btn-rounded float-right">View all <i
                                             class="fas fa-arrow-right ml-1"></i></a>
@@ -968,7 +968,7 @@
                 @endif
 
                 @php
-                    $showAdminApptChart = tenant_has_module('Appointments');
+                    $showAdminApptChart = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
                     $showAdminNewPatients = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(28, 'view'));
                 @endphp
                 @if ($showAdminApptChart || $showAdminNewPatients)
@@ -1251,7 +1251,7 @@
                     </div>
                     @endif
 
-                    @if (tenant_has_module('Appointments') && app('hasPermission')(1, 'view'))
+                    @if (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('appointment.index') }}">
                             <div class="dash-widget1">
@@ -1294,8 +1294,8 @@
                 </div>
 
                 @php
-                    $showDocUpcomingAppt = tenant_has_module('Appointments') && (app('hasPermission')(1, 'view') || app('hasPermission')(29, 'view'));
-                    $showDocCal = tenant_has_module(['Appointments', 'Calendar']);
+                    $showDocUpcomingAppt = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
+                    $showDocCal = (tenant_has_module('Calendar') && app('hasPermission')(9, 'view')) || (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'));
                 @endphp
                 @if ($showDocUpcomingAppt || $showDocCal)
                 <div class="row calender-apointment align-items-stretch">
@@ -1307,7 +1307,7 @@
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i>
                                     Upcoming Appointments</h4>
-                                @if (app('hasPermission')(29, 'view'))
+                                @if (app('hasPermission')(6, 'view'))
                                     <a href="{{ route('appointment.index') }}"
                                         class="btn btn-primary btn-rounded float-right">View
                                         all <i class="fas fa-arrow-right ml-1"></i></a>
@@ -1494,7 +1494,7 @@
                 @endif
 
                 @php
-                    $showDocApptChart = tenant_has_module('Appointments');
+                    $showDocApptChart = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
                     $showDocNewPatients = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(28, 'view'));
                 @endphp
                 @if ($showDocApptChart || $showDocNewPatients)
@@ -1770,7 +1770,7 @@
                     </div>
                     @endif
 
-                    @if (tenant_has_module('Appointments') && app('hasPermission')(1, 'view'))
+                    @if (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('appointment.index') }}">
                             <div class="dash-widget1">
@@ -1812,13 +1812,19 @@
 
                 </div>
 
-                <div class="row">
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-7">
-                        <div class="card">
+                @php
+                    $showRecepUpcomingAppt = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
+                    $showRecepCal = (tenant_has_module('Calendar') && app('hasPermission')(9, 'view')) || (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'));
+                @endphp
+                @if ($showRecepUpcomingAppt || $showRecepCal)
+                <div class="row calender-apointment align-items-stretch">
+                    @if ($showRecepUpcomingAppt)
+                    <div class="col-12 col-md-12 {{ $showRecepCal ? 'col-lg-12 col-xl-7' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
+                        <div class="card flex-fill h-100 d-flex flex-column">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i> Upcoming Appointments</h4>
-                                @if (app('hasPermission')(29, 'view'))
+                                @if (app('hasPermission')(6, 'view'))
                                     <a href="{{ route('appointment.index') }}"
                                         class="btn btn-primary btn-rounded float-right">View all <i
                                             class="fas fa-arrow-right ml-1"></i></a>
@@ -1953,8 +1959,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-5">
+                    @if ($showRecepCal)
+                    <div class="col-12 col-md-12 {{ $showRecepUpcomingAppt ? 'col-lg-12 col-xl-5' : 'col-lg-12 col-xl-12' }}">
                         <div class="card calender-card">
 
                             <!-- <div class="d-flex gap-2 p-3">
@@ -1995,11 +2003,19 @@
 
                         </div>
                     </div>
+                    @endif
                 </div>
+                @endif
 
-                <div class="row">
+                @php
+                    $showRecepApptChart = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
+                    $showRecepNewPatients = tenant_has_module('Patients') && (app('hasPermission')(5, 'view') || app('hasPermission')(28, 'view'));
+                @endphp
+                @if ($showRecepApptChart || $showRecepNewPatients)
+                <div class="row dashboard-charts-row align-items-stretch">
 
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-6">
+                    @if ($showRecepApptChart)
+                    <div class="col-12 col-md-12 {{ $showRecepNewPatients ? 'col-lg-12 col-xl-6' : 'col-lg-12 col-xl-12' }}">
                         <div class="card">
                             <div class="card-body height-card">
                                 <div class="chart-title">
@@ -2120,8 +2136,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-6 d-flex flex-column">
+                    @if ($showRecepNewPatients)
+                    <div class="col-12 col-md-12 {{ $showRecepApptChart ? 'col-lg-12 col-xl-6' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
                         <div class="card flex-fill h-100 d-flex flex-column">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-user icon-style1"></i> New Patients
@@ -2247,8 +2265,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                 </div>
+                @endif
 
             </div>
         @endif
@@ -2315,13 +2335,19 @@
 
                 </div>
 
-                <div class="row">
-                    <div class="col-12 col-md-12 col-lg-12 col-xl-7">
-                        <div class="card">
+                @php
+                    $showRecepUpcomingAppt = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
+                    $showRecepCal = (tenant_has_module('Calendar') && app('hasPermission')(9, 'view')) || (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'));
+                @endphp
+                @if ($showRecepUpcomingAppt || $showRecepCal)
+                <div class="row calender-apointment align-items-stretch">
+                    @if ($showRecepUpcomingAppt)
+                    <div class="col-12 col-md-12 {{ $showRecepCal ? 'col-lg-12 col-xl-7' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
+                        <div class="card flex-fill h-100 d-flex flex-column">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i> Upcoming Appointments</h4>
-                                @if (app('hasPermission')(29, 'view'))
+                                @if (app('hasPermission')(6, 'view'))
                                     <a href="{{ route('appointment.index') }}"
                                         class="btn btn-primary btn-rounded float-right">View all <i
                                             class="fas fa-arrow-right ml-1"></i></a>
