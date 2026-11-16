@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
             return function ($moduleId, $action) {
                 // Map numeric module IDs to module names for tenant module access validation
                 static $idToNameMap = [
-                    1  => 'Medicines',
+                    1  => 'Dashboard',
                     2  => 'Followup',
                     3  => 'Staffs',
                     4  => 'Medicines',
@@ -118,6 +118,11 @@ class AppServiceProvider extends ServiceProvider
                     return false;
                 }
 
+                // Admins have full access to tenant-permitted modules
+                if ((string)$user->role_id === '2' || (int)$user->role_id === 1 || strtolower(optional($user->role)->name ?? '') === 'admin') {
+                    return true;
+                }
+
                 // Check user_permissions table: if permissions exist for this user, strictly enforce them
                 if (\Illuminate\Support\Facades\Schema::hasTable('user_permissions')) {
                     $hasAnyInDb = \App\Models\UserPermission::where('user_id', $user->id)->exists();
@@ -135,11 +140,6 @@ class AppServiceProvider extends ServiceProvider
                             })
                             ->exists();
                     }
-                }
-
-                // Admins have full access to tenant-permitted modules if table not seeded
-                if ((string)$user->role_id === '2' || (int)$user->role_id === 1) {
-                    return true;
                 }
 
                 $actionNormalized = match(strtolower((string)$action)) {
