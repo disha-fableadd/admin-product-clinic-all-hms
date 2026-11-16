@@ -593,7 +593,7 @@
                     </div>
                     @endif
 
-                    @if (tenant_has_module('Appointments') && app('hasPermission')(1, 'view'))
+                    @if (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'))
                     <div class="col-md-6 col-sm-6 col-lg-6 col-xl-3 p-1 boxes col-6">
                         <a href="{{ route('appointment.index') }}">
                             <div class="dash-widget1">
@@ -692,13 +692,19 @@
                 </div>
 
 
+                @php
+                    $showPhysioUpcomingAppt = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
+                    $showPhysioFollowupStaff = tenant_has_module('Followup') && app('hasPermission')(2, 'view');
+                @endphp
+                @if ($showPhysioUpcomingAppt || $showPhysioFollowupStaff)
                 <div class="row calender-apointment">
-                    <div class="col-12 col-md-12 col-lg-6 col-xl-6">
+                    @if ($showPhysioUpcomingAppt)
+                    <div class="col-12 col-md-12 {{ $showPhysioFollowupStaff ? 'col-lg-6 col-xl-6' : 'col-lg-12 col-xl-12' }}">
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i> Upcoming Appointments</h4>
-                                @if (app('hasPermission')(29, 'view'))
+                                @if (app('hasPermission')(6, 'view'))
                                     <a href="{{ route('appointment.index') }}"
                                         class="btn btn-primary btn-rounded float-right">View all <i
                                             class="fas fa-arrow-right ml-1"></i></a>
@@ -836,13 +842,15 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
-                    <div class="col-12 col-md-12 col-lg-6 col-xl-6">
+                    @if ($showPhysioFollowupStaff)
+                    <div class="col-12 col-md-12 {{ $showPhysioUpcomingAppt ? 'col-lg-6 col-xl-6' : 'col-lg-12 col-xl-12' }}">
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i>Today Followup By Staff</h4>
-                                @if (app('hasPermission')(29, 'view'))
+                                @if (app('hasPermission')(2, 'view'))
                                     <a href="{{ route('followup.index') }}"
                                         class="btn btn-primary btn-rounded float-right">View all <i
                                             class="fas fa-arrow-right ml-1"></i></a>
@@ -908,8 +916,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                 </div>
+                @endif
 
                 <div class="row">
 
