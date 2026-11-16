@@ -51,7 +51,7 @@
     // Clinical Services Permissions
     $hasOpdPerm = tenant_has_module('OPD') && ($isAdmin || app('hasPermission')(13, 'view') || app('hasPermission')(23, 'view'));
     $hasIpdPerm = tenant_has_module('IPD') && ($isAdmin || app('hasPermission')(14, 'view') || app('hasPermission')(25, 'view'));
-    $hasDailyRegisterPerm = tenant_has_module('Daily Register') && ($isAdmin || app('hasPermission')(30, 'view') || app('hasPermission')(28, 'view'));
+    $hasDailyRegisterPerm = tenant_has_module(['Daily Register', 'Daily Data']) && ($isAdmin || app('hasPermission')(28, 'view') || app('hasPermission')(28, 'create') || app('hasPermission')(30, 'view') || app('hasPermission')(30, 'create'));
     $hasTherapyPerm = tenant_has_module('Therapy') && ($isAdmin || app('hasPermission')(29, 'view') || app('hasPermission')(26, 'view') || app('hasPermission')(27, 'view'));
     $hasDietChartPerm = tenant_has_module('Diet Chart') && ($isAdmin || app('hasPermission')(34, 'view'));
     $hasClinicalNotesPerm = tenant_has_module('Clinical Notes') && ($isAdmin || app('hasPermission')(28, 'view') || app('hasPermission')(27, 'view') || app('hasPermission')(31, 'view') || app('hasPermission')(32, 'view') || app('hasPermission')(33, 'view'));
@@ -801,7 +801,7 @@
                         @endif
 
                         {{-- Daily Register --}}
-                        @if (tenant_has_module('Daily Register') && (app('hasPermission')(30, 'view') || app('hasPermission')(28, 'view')))
+                        @if (tenant_has_module(['Daily Register', 'Daily Data']) && ($isAdmin || app('hasPermission')(28, 'view') || app('hasPermission')(28, 'create') || app('hasPermission')(30, 'view') || app('hasPermission')(30, 'create')))
                             <li class="submenu sidebar-module {{ request()->routeIs('daily_data.*') ? 'active' : '' }}">
                                 <a href="javascript:void(0);" class="{{ request()->routeIs('daily_data.*') ? 'subdrop active' : '' }}">
                                     <i class="fas fa-file-medical-alt icons"></i>
@@ -809,13 +809,15 @@
                                     <span class="menu-arrow"></span>
                                 </a>
                                 <ul style="{{ request()->routeIs('daily_data.*') ? 'display: block;' : 'display: none;' }}">
-                                    <li class="{{ request()->routeIs('daily_data.index') ? 'active' : '' }}">
-                                        <a href="{{ route('daily_data.index') }}" class="{{ request()->routeIs('daily_data.index') ? 'active' : '' }}">
-                                            <i class="fas fa-list-alt icons"></i>
-                                            <span>All Daily Register</span>
-                                        </a>
-                                    </li>
-                                    @if (app('hasPermission')(30, 'create'))
+                                    @if (tenant_has_sub_module(['All Daily Register', 'all-daily-register'], 'Daily Register') && ($isAdmin || app('hasPermission')(28, 'view') || app('hasPermission')(30, 'view')))
+                                        <li class="{{ request()->routeIs('daily_data.index') ? 'active' : '' }}">
+                                            <a href="{{ route('daily_data.index') }}" class="{{ request()->routeIs('daily_data.index') ? 'active' : '' }}">
+                                                <i class="fas fa-list-alt icons"></i>
+                                                <span>All Daily Register</span>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if (tenant_has_sub_module(['Add Daily Register', 'add-daily-register'], 'Daily Register') && ($isAdmin || app('hasPermission')(28, 'create') || app('hasPermission')(30, 'create')))
                                         <li class="{{ request()->routeIs('daily_data.create') ? 'active' : '' }}">
                                             <a href="{{ route('daily_data.create') }}" class="{{ request()->routeIs('daily_data.create') ? 'active' : '' }}">
                                                 <i class="fas fa-plus-circle icons"></i>

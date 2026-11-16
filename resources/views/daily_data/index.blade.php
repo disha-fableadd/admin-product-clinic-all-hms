@@ -450,6 +450,11 @@
 @php
     use App\Models\Setting;
     $razorpayEnabled = Setting::getValue('razorpay_status') === 'on';
+    $user = Auth::user();
+    $isAdmin = $user && ((string)$user->role_id === '2' || (int)$user->role_id === 1 || strtolower(optional($user->role)->name ?? '') === 'admin');
+    $canCreateDailyRegister = tenant_has_sub_module(['Add Daily Register', 'add-daily-register'], 'Daily Register') && ($isAdmin || app('hasPermission')(28, 'create') || app('hasPermission')(30, 'create'));
+    $canEditDailyRegister = $isAdmin || app('hasPermission')(28, 'update') || app('hasPermission')(30, 'update');
+    $canDeleteDailyRegister = $isAdmin || app('hasPermission')(28, 'delete') || app('hasPermission')(30, 'delete');
 @endphp
 
 @section('content')
@@ -465,7 +470,7 @@
                                 <i class="fa fa-flask px-2" style="font-size:20px"></i>All Daily Payment
                             </h3>
 
-                            @if (app('hasPermission')(30, 'create'))
+                            @if ($canCreateDailyRegister)
                                 <a href="{{ route('daily_data.create') }}" class="btn btn-rounded btn-hdr"
                                     style="background-color: #fed9cf;">
                                     <i class="fa fa-plus"></i> <span class="hdr-btn-text">Add</span>
@@ -970,7 +975,7 @@
                                                                     </button>
                                                                 `;
                             }
-                            @if (app('hasPermission')(30, 'create'))
+                            @if ($canCreateDailyRegister)
                                 if (date >= today) {
                                     addBtnHtml = `
                                                                                                             <a href="{{ route('daily_data.create') }}" class="btn btn-rounded btn-hdr" style="background-color:#fed9cf;">
@@ -1046,10 +1051,10 @@
 
                                                                         <td class="d-none d-md-table-cell" style="padding: .5rem !important;">
                                                                             <div class="icon">
-                                                                                @if (app('hasPermission')(30, 'update'))
+                                                                                @if ($canEditDailyRegister)
                                                                                     <i class="fa fa-pencil m-r-5 icon1 edit-daily_data" style="cursor:pointer" data-id="${entry.id}" title="Edit Daily register"></i>
                                                                                 @endif
-                                                                                @if (app('hasPermission')(30, 'delete'))
+                                                                                @if ($canDeleteDailyRegister)
                                                                                     <i class="fa fa-trash-o m-r-5 icon2 delete-daily_data" style="cursor:pointer" data-id="${entry.id}" title="Delete Daily register"></i>
                                                                                 @endif
                                                                                 <i class="fa fa-credit-card m-r-5 icon3 payment-history" style="cursor:pointer; color:white;" title="Payment History" data-id="${entry.id}"></i>
