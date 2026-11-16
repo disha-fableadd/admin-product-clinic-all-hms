@@ -2335,23 +2335,16 @@
 
                 </div>
 
-                @php
-                    $showRecepUpcomingAppt = tenant_has_module('Appointments') && app('hasPermission')(6, 'view');
-                    $showRecepCal = (tenant_has_module('Calendar') && app('hasPermission')(9, 'view')) || (tenant_has_module('Appointments') && app('hasPermission')(6, 'view'));
-                @endphp
-                @if ($showRecepUpcomingAppt || $showRecepCal)
-                <div class="row calender-apointment align-items-stretch">
-                    @if ($showRecepUpcomingAppt)
-                    <div class="col-12 col-md-12 {{ $showRecepCal ? 'col-lg-12 col-xl-7' : 'col-lg-12 col-xl-12' }} d-flex flex-column">
-                        <div class="card flex-fill h-100 d-flex flex-column">
+                @if (tenant_has_module('Appointments'))
+                <div class="row">
+                    <div class="col-12 col-md-12 col-lg-12 col-xl-7">
+                        <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title d-inline-block"><i class="fa fa-stethoscope icon-style1"
                                         aria-hidden="true"></i> Upcoming Appointments</h4>
-                                @if (app('hasPermission')(6, 'view'))
-                                    <a href="{{ route('appointment.index') }}"
-                                        class="btn btn-primary btn-rounded float-right">View all <i
-                                            class="fas fa-arrow-right ml-1"></i></a>
-                                @endif
+                                <a href="{{ route('appointment.index') }}"
+                                    class="btn btn-primary btn-rounded float-right">View all <i
+                                        class="fas fa-arrow-right ml-1"></i></a>
                             </div>
                             <div class="card-body flex-fill d-flex flex-column dashboard-scroll-body">
                                 <div class="table-responsive">
@@ -2516,6 +2509,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         @endif
 
